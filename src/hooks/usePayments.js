@@ -25,7 +25,7 @@ export function usePayments() {
     } finally {
       setLoading(false);
     }
-  }, [gym]);
+  }, [isReady, gym]);
 
   const addPayment = async (paymentData) => {
     try {

@@ -88,8 +88,10 @@ export default function Dashboard() {
       {/* ── Top Bar (Search & Actions) ── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
-          <span className="text-slate-500 text-sm block mb-1">{greeting}</span>
-          <GymNameEditor gymName={gymName} onSave={updateGymName} />
+          <h1 className="text-2xl font-bold text-white tracking-tight flex items-center gap-2">
+            <span className="text-gradient">{greeting},</span>
+            <GymNameEditor gymName={gymName} onSave={updateGymName} />
+          </h1>
         </div>
         
         <div className="flex items-center gap-3">
@@ -154,12 +156,17 @@ export default function Dashboard() {
         {/* Left Column (Charts & Activity) */}
         <div className="lg:col-span-2 space-y-8">
           {/* Chart Widget */}
-          <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5">
-            <div className="flex items-center justify-between mb-2">
+          <div className="glass-card rounded-2xl p-6">
+            <div className="flex items-center justify-between mb-6">
               <h3 className="text-white font-semibold">Revenue Trend (Last 7 Days)</h3>
-              <span className="text-xs text-slate-500">₹{stats.revenue.today.toLocaleString()} Today</span>
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-sky-500 animate-pulse"></span>
+                <span className="text-xs text-slate-400">₹{stats.revenue.today.toLocaleString()} Today</span>
+              </div>
             </div>
-            <LightweightChart data={stats.revenueChartData} />
+            <div className="h-[300px]">
+              <LightweightChart data={stats.revenueChartData} />
+            </div>
           </div>
 
           {/* Activity Feed Widget */}

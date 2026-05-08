@@ -20,7 +20,7 @@
   --color-surface-700: #334155;
   --color-surface-600: #475569;
 
-  --radius-card: 0.75rem;
+  --radius-card: 1rem;
 }
 
 /* ── Base ── */
@@ -31,18 +31,49 @@ html, body, #root {
   margin: 0;
   padding: 0;
   font-family: var(--font-sans);
-  background-color: #0f172a;
+  background: radial-gradient(circle at top right, #1e293b, #0f172a);
   color: #f1f5f9;
   -webkit-font-smoothing: antialiased;
 }
 
+/* ── Glassmorphism ── */
+.glass-panel {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(30, 41, 59, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  background: rgba(30, 41, 59, 0.6);
+  border-color: rgba(14, 165, 233, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: #1e293b; }
-::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
 
 /* ── Focus ring ── */
 *:focus-visible {
   outline: 2px solid #0ea5e9;
   outline-offset: 2px;
+}
+
+/* Custom Utilities */
+.text-gradient {
+  background: linear-gradient(to right, #f1f5f9, #94a3b8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }

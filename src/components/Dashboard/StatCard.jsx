@@ -13,7 +13,7 @@ export default function StatCard({ title, value, subtitle, icon, colorClass, tre
   const selectedColor = colors[colorClass] || colors.slate;
 
   return (
-    <div className="p-5 rounded-2xl bg-slate-800/40 border border-slate-700/50 flex flex-col hover:bg-slate-800/60 transition-colors">
+    <div className="p-5 rounded-2xl glass-card flex flex-col">
       <div className="flex items-start justify-between mb-4">
         <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${selectedColor}`}>
           {icon}

@@ -125,10 +125,10 @@ function SidebarContent({ onClose }) {
               key={item.path}
               to={item.path}
               onClick={onClose}
-              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                 isActive
-                  ? 'bg-sky-500/10 text-sky-400'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+                  ? 'bg-sky-500/10 text-sky-400 shadow-[inset_0_0_10px_rgba(14,165,233,0.1)]'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/5'
               }`}
             >
               <span className={isActive ? 'text-sky-400' : ''}>{item.icon}</span>
@@ -220,7 +220,7 @@ export default function AppLayout({ children }) {
   return (
     <div className="flex h-screen bg-slate-900 overflow-hidden">
       {/* ── Desktop sidebar ── */}
-      <aside className="hidden lg:flex lg:w-60 xl:w-64 flex-col bg-slate-900 border-r border-slate-800 flex-shrink-0">
+      <aside className="hidden lg:flex lg:w-64 flex-col glass-panel border-r border-white/5 flex-shrink-0">
         <SidebarContent />
       </aside>
 

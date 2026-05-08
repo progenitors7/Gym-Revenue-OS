@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../hooks/useNotifications';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow } from 'date-fns';
 
 export default function NotificationsPage() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
