@@ -1,7 +1,6 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-
-const AuthContext = createContext(null)
+import { AuthContext } from './AuthContext'
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
@@ -10,7 +9,6 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let settled = false
 
-    // Resolve auth state — use a 5s safety timeout to prevent infinite spinner
     const timer = setTimeout(() => {
       if (!settled) {
         settled = true
@@ -60,13 +58,29 @@ export function AuthProvider({ children }) {
     if (error) throw error
   }
 
-  const value = { user, loading, signUp, signIn, signOut }
+  const resetPasswordForEmail = async (email) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    if (error) throw error
+  }
+
+  const updatePassword = async (newPassword) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw error
+  }
+
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+      },
+    })
+    if (error) throw error
+  }
+
+  const value = { user, loading, signUp, signIn, signOut, resetPasswordForEmail, updatePassword, signInWithGoogle }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext)
-  if (!context) throw new Error('useAuth must be used within an AuthProvider')
-  return context
 }

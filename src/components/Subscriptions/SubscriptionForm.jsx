@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, User, CreditCard, Tag } from 'lucide-react';
+import { Calendar, User, Tag } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 
 export default function SubscriptionForm({ onSubmit, initialData = null, isSubmitting = false }) {
@@ -17,8 +17,10 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
   });
 
   useEffect(() => {
-    fetchMembers();
-  }, [fetchMembers]);
+    if (members.length === 0) {
+      fetchMembers();
+    }
+  }, [fetchMembers, members.length]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

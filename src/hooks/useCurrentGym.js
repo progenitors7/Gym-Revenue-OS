@@ -3,8 +3,9 @@
  * Convenience hook returning gym state with derived helpers.
  * Import this in components instead of useGym() directly.
  */
-import { useGym } from '../context/GymContext'
-import { useAuth } from '../context/AuthContext'
+import { useGym } from './useGym'
+import { useAuth } from './useAuth'
+
 
 export function useCurrentGym() {
   const { gym, gymLoading, gymError, refreshGym, updateGymName } = useGym()

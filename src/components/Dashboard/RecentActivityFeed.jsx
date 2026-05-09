@@ -20,8 +20,8 @@ export default function RecentActivityFeed({ activities }) {
       <div className="space-y-4">
         {activities.map((activity, index) => {
           // Icons based on type
-          let icon = null;
-          let iconColor = "";
+          let icon;
+          let iconColor;
           
           if (activity.type === 'member_joined') {
             icon = (
@@ -50,7 +50,7 @@ export default function RecentActivityFeed({ activities }) {
             <div key={`${activity.type}-${activity.id}-${index}`} className="flex gap-4">
               {/* Timeline Line */}
               <div className="flex flex-col items-center">
-                <div className={`w-8 h-8 rounded-full border flex items-center justify-center flex-shrink-0 ${iconColor}`}>
+                <div className={`flex items-center justify-center w-8 h-8 rounded-lg border ${iconColor}`}>
                   {icon}
                 </div>
                 {index !== activities.length - 1 && (
@@ -63,7 +63,7 @@ export default function RecentActivityFeed({ activities }) {
                 <p className="text-sm font-medium text-white">{activity.title}</p>
                 <p className="text-sm text-slate-400 mt-0.5">{activity.description}</p>
                 <p className="text-xs text-slate-500 mt-1">
-                  {formatDistanceToNow(new Date(activity.date), { addSuffix: true })}
+                  {activity.date ? formatDistanceToNow(new Date(activity.date), { addSuffix: true }) : 'Recently'}
                 </p>
               </div>
             </div>

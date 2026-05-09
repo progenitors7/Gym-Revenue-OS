@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Calendar, CreditCard, Filter } from 'lucide-react';
+import { Plus, Search, Calendar } from 'lucide-react';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 
 export default function SubscriptionsPage() {

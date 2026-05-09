@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Receipt, Filter } from 'lucide-react';
+import { Plus, Search, Receipt } from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
 
 export default function PaymentsPage() {

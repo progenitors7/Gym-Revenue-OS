@@ -31,8 +31,16 @@ export function useMembers() {
   }, [isReady])
 
   useEffect(() => {
-    fetchMembers()
-  }, [fetchMembers])
+    let mounted = true;
+    if (isReady && members.length === 0 && !error) {
+      setTimeout(() => {
+        if (mounted) fetchMembers()
+      }, 0);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [fetchMembers, isReady, members.length, error])
 
   const addMember = useCallback(async (formData) => {
     if (!gymId) throw new Error('Gym not loaded')

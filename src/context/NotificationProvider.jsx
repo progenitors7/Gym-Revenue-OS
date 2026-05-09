@@ -1,8 +1,7 @@
-import { useState, useEffect, useCallback, createContext, useContext } from 'react';
-import { useGym } from '../context/GymContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useGym } from '../hooks/useGym';
 import { notificationService } from '../services/notificationService';
-
-const NotificationContext = createContext();
+import { NotificationContext } from './NotificationContext';
 
 export function NotificationProvider({ children }) {
   const { gym } = useGym();
@@ -17,21 +16,35 @@ export function NotificationProvider({ children }) {
     }
     setLoading(true);
     
-    // First, ask DB to sync/generate new ones
-    await notificationService.syncNotifications(gym.id);
-    
-    // Then fetch
-    const { data, error } = await notificationService.getNotifications();
-    if (!error && data) {
-      setNotifications(data);
-      setUnreadCount(data.filter(n => !n.is_read).length);
+    try {
+      // First, ask DB to sync/generate new ones
+      await notificationService.syncNotifications(gym.id);
+      
+      // Then fetch
+      const { data, error } = await notificationService.getNotifications();
+      if (!error && data) {
+        setNotifications(data);
+        setUnreadCount(data.filter(n => !n.is_read).length);
+      }
+    } catch (err) {
+      console.error('[NotificationProvider] Error fetching notifications:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [gym]);
 
   useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    let mounted = true;
+    if (gym?.id && notifications.length === 0 && !loading) {
+      // Use setTimeout to avoid synchronous state updates in effect
+      setTimeout(() => {
+        if (mounted) fetchNotifications();
+      }, 0);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [gym?.id, fetchNotifications, notifications.length, loading]);
 
   const markAsRead = async (id) => {
     // Optimistic UI update
@@ -61,8 +74,4 @@ export function NotificationProvider({ children }) {
       {children}
     </NotificationContext.Provider>
   );
-}
-
-export function useNotifications() {
-  return useContext(NotificationContext);
 }

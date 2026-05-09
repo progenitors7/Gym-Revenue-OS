@@ -32,7 +32,7 @@ export default function ExpiringWidget({ members }) {
             </div>
             <div className="text-right">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20 mb-1">
-                {format(new Date(member.expiry_date), 'MMM d, yyyy')}
+                {member.expiry_date ? format(new Date(member.expiry_date), 'MMM d, yyyy') : 'No date'}
               </span>
               <br/>
               <Link to="/subscriptions" className="text-xs text-sky-400 hover:text-sky-300">Renew &rarr;</Link>

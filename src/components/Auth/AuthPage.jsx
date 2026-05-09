@@ -1,12 +1,13 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
+import { useAuth } from '../../hooks/useAuth'
 import LoginForm from './LoginForm'
 import SignupForm from './SignupForm'
+import ForgotPasswordForm from './ForgotPasswordForm'
 
 export default function AuthPage() {
   const { user, loading } = useAuth()
-  const [mode, setMode] = useState('login') // 'login' | 'signup'
+  const [mode, setMode] = useState('login') // 'login' | 'signup' | 'forgot-password'
 
   // Redirect if already authenticated
   if (!loading && user) {
@@ -86,36 +87,40 @@ export default function AuthPage() {
         </div>
 
         <div className="w-full max-w-sm">
-          {/* Toggle tabs */}
-          <div className="flex rounded-xl bg-slate-800 p-1 mb-8 gap-1">
-            <button
-              id="tab-login"
-              onClick={() => setMode('login')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                mode === 'login'
-                  ? 'bg-slate-700 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Sign in
-            </button>
-            <button
-              id="tab-signup"
-              onClick={() => setMode('signup')}
-              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
-                mode === 'signup'
-                  ? 'bg-slate-700 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              Create account
-            </button>
-          </div>
+          {/* Toggle tabs (only show in login/signup mode) */}
+          {mode !== 'forgot-password' && (
+            <div className="flex rounded-xl bg-slate-800 p-1 mb-8 gap-1">
+              <button
+                id="tab-login"
+                onClick={() => setMode('login')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === 'login'
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Sign in
+              </button>
+              <button
+                id="tab-signup"
+                onClick={() => setMode('signup')}
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
+                  mode === 'signup'
+                    ? 'bg-slate-700 text-white shadow-sm'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                Create account
+              </button>
+            </div>
+          )}
 
           {mode === 'login' ? (
-            <LoginForm onSwitch={() => setMode('signup')} />
-          ) : (
+            <LoginForm onSwitch={() => setMode('signup')} onForgotPassword={() => setMode('forgot-password')} />
+          ) : mode === 'signup' ? (
             <SignupForm onSwitch={() => setMode('login')} />
+          ) : (
+            <ForgotPasswordForm onSwitch={setMode} />
           )}
         </div>
 

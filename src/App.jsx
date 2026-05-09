@@ -1,10 +1,11 @@
 import React, { Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { AuthProvider } from './context/AuthContext'
-import { GymProvider } from './context/GymContext'
-import { NotificationProvider } from './hooks/useNotifications'
+import { AuthProvider } from './context/AuthProvider'
+import { GymProvider } from './context/GymProvider'
+import { NotificationProvider } from './context/NotificationProvider'
 import ProtectedRoute from './components/Layout/ProtectedRoute'
 import AppLayout from './components/Layout/AppLayout'
+
 
 const AuthPage = React.lazy(() => import('./components/Auth/AuthPage'))
 const Dashboard = React.lazy(() => import('./components/Dashboard/Dashboard'))
@@ -16,6 +17,7 @@ const AddSubscriptionPage = React.lazy(() => import('./components/Subscriptions/
 const PaymentsPage = React.lazy(() => import('./components/Payments/PaymentsPage'))
 const AddPaymentPage = React.lazy(() => import('./components/Payments/AddPaymentPage'))
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'))
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'))
 
 function LoadingScreen() {
   return (
@@ -48,6 +50,8 @@ export default function App() {
             <Routes>
               {/* ── Public ── */}
             <Route path="/" element={<AuthPage />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
 
             {/* ── Protected ── */}
             <Route path="/dashboard" element={<Protected><Dashboard /></Protected>} />

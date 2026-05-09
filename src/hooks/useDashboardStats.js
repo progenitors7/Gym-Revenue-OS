@@ -1,9 +1,9 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { useGym } from '../context/GymContext';
+import { useGym } from './useGym';
 
 export function useDashboardStats() {
-  const { gym, loading: gymLoading } = useGym();
+  const { gym } = useGym();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [stats, setStats] = useState(null);
@@ -22,6 +22,7 @@ export function useDashboardStats() {
       const { data: members, error: membersError } = await supabase
         .from('members')
         .select('id, full_name, phone_number, status, expiry_date, created_at')
+        .eq('gym_id', gym.id)
         .order('created_at', { ascending: false });
 
       if (membersError) throw membersError;
@@ -37,6 +38,7 @@ export function useDashboardStats() {
           created_at,
           members (full_name)
         `)
+        .eq('gym_id', gym.id)
         .order('created_at', { ascending: false });
 
       if (paymentsError) throw paymentsError;
@@ -149,6 +151,18 @@ export function useDashboardStats() {
       setLoading(false);
     }
   }, [gym]);
+
+  useEffect(() => {
+    let mounted = true;
+    if (gym && !stats && !error) {
+      setTimeout(() => {
+        if (mounted) fetchStats();
+      }, 0);
+    }
+    return () => {
+      mounted = false;
+    };
+  }, [fetchStats, gym, stats, error]);
 
   return {
     stats,

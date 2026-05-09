@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme {
+:root {
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
 
   --color-brand-50: #f0f9ff;
@@ -22,6 +22,7 @@
 
   --radius-card: 1rem;
 }
+
 
 /* ── Base ── */
 *, *::before, *::after { box-sizing: border-box; }
@@ -74,6 +75,8 @@ html, body, #root {
 /* Custom Utilities */
 .text-gradient {
   background: linear-gradient(to right, #f1f5f9, #94a3b8);
+  background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+

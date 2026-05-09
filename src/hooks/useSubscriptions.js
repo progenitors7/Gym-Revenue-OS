@@ -25,7 +25,7 @@ export function useSubscriptions() {
     } finally {
       setLoading(false);
     }
-  }, [isReady, gym]);
+  }, [isReady]);
 
   const addSubscription = async (subscriptionData) => {
     try {

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { useAuth } from '../../context/AuthContext'
-import { useGym } from '../../context/GymContext'
+import { useAuth } from '../../hooks/useAuth'
+import { useGym } from '../../hooks/useGym'
+
 import { useNotifications } from '../../hooks/useNotifications'
 
 const NAV_ITEMS = [

@@ -18,7 +18,7 @@ const CurrencyIcon = <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5"
 
 /* ── Main Dashboard ── */
 export default function Dashboard() {
-  const { gym, gymLoading, gymError, gymName, ownerEmail, updateGymName } = useCurrentGym()
+  const { gym, gymLoading, gymError, gymName, updateGymName } = useCurrentGym()
   const { stats, loading: statsLoading, error: statsError, fetchStats } = useDashboardStats();
   const navigate = useNavigate();
 
@@ -41,6 +41,16 @@ export default function Dashboard() {
 
   if (gymLoading || statsLoading) return <DashboardSkeleton />
   
+  if (gymError || statsError) {
+    return (
+      <div className="p-8 flex flex-col items-center justify-center min-h-96 gap-3 text-center">
+        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 text-xl">⚠</div>
+        <p className="text-white font-semibold">Could not load your dashboard</p>
+        <p className="text-slate-400 text-sm max-w-sm">{gymError || statsError}</p>
+      </div>
+    )
+  }
+
   if (!gym && !gymLoading) {
     return (
       <div className="p-8 flex flex-col items-center justify-center min-h-96 gap-3 text-center">
@@ -48,16 +58,6 @@ export default function Dashboard() {
         <p className="text-white font-semibold">Gym account not found</p>
         <p className="text-slate-400 text-sm max-w-sm">We couldn't retrieve your gym record. Try logging out and back in, or contact support.</p>
         <button onClick={() => window.location.reload()} className="mt-4 px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors">Retry</button>
-      </div>
-    )
-  }
-
-  if (gymError || statsError) {
-    return (
-      <div className="p-8 flex flex-col items-center justify-center min-h-96 gap-3 text-center">
-        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center text-red-400 text-xl">⚠</div>
-        <p className="text-white font-semibold">Could not load your dashboard</p>
-        <p className="text-slate-400 text-sm max-w-sm">{gymError || statsError}</p>
       </div>
     )
   }

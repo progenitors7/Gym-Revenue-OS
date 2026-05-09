@@ -20,7 +20,6 @@ export default function EditMemberPage() {
 
   useEffect(() => {
     let active = true
-    setLoadingMember(true)
     getMemberById(id)
       .then((data) => { if (active) setMember(data) })
       .catch((err) => { if (active) setFetchError(err.message) })
