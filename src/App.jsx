@@ -18,6 +18,7 @@ const PaymentsPage = React.lazy(() => import('./components/Payments/PaymentsPage
 const AddPaymentPage = React.lazy(() => import('./components/Payments/AddPaymentPage'))
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'))
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'))
+const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
 
 function LoadingScreen() {
   return (
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/payments/new"      element={<Protected><AddPaymentPage /></Protected>} />
 
             <Route path="/notifications"     element={<Protected><NotificationsPage /></Protected>} />
+            <Route path="/settings"          element={<Protected><SettingsPage /></Protected>} />
 
             {/* ── Catch-all ── */}
             <Route path="*" element={<Navigate to="/" replace />} />
