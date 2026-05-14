@@ -25,7 +25,7 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="h-screen w-full bg-[#0F1117] flex selection:bg-emerald-500/30 overflow-hidden relative">
+    <div className="min-h-screen w-full bg-[#0F1117] flex selection:bg-emerald-500/30 relative">
       {/* ── Left branding panel ── */}
       <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden group">
         {/* Background Image with Parallax-like effect */}
@@ -117,7 +117,7 @@ export default function AuthPage() {
       </div>
 
       {/* ── Right auth panel ── */}
-      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative overflow-y-auto overflow-x-hidden h-full">
+      <div className="flex-1 flex flex-col justify-center items-center px-6 py-12 relative overflow-y-auto overflow-x-hidden min-h-screen lg:h-screen w-full">
         <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-emerald-500/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2" />
         
         <div className="w-full max-w-[420px] space-y-10 relative z-10">

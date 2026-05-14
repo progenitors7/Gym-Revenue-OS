@@ -44,7 +44,7 @@ export default function LoginForm({ onSwitch, onForgotPassword }) {
         type="button"
         onClick={handleGoogleLogin}
         disabled={loading}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-black font-bold text-xs transition-all active:scale-[0.98] disabled:opacity-50 border border-white/10"
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-slate-50 active:bg-slate-200 text-black font-bold text-xs transition-all active:scale-[0.98] disabled:opacity-50 border border-white/10 shadow-sm"
       >
         <svg width="18" height="18" viewBox="0 0 18 18">
           <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
