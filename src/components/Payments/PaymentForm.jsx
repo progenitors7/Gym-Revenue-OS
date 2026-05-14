@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { User, Receipt, CreditCard, Calendar, FileText } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
+import DatePicker from '../UI/DatePicker';
 
 export default function PaymentForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
@@ -50,23 +51,23 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Member Selection */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Select Member</label>
-          <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3 md:col-span-2">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Select Athlete</label>
+          <div className="relative group">
+            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <select
               name="member_id"
               value={formData.member_id}
               onChange={handleChange}
               required
               disabled={!!initialData}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all disabled:opacity-50"
             >
-              <option value="" disabled>Choose a member...</option>
+              <option value="" disabled>Choose an athlete...</option>
               {members.map(member => (
                 <option key={member.id} value={member.id}>
                   {member.full_name} ({member.phone_number})
@@ -77,21 +78,21 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
         </div>
 
         {/* Subscription Selection (Optional) */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Related Subscription (Optional)</label>
-          <div className="relative">
-            <Receipt className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3 md:col-span-2">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Connect Subscription (Optional)</label>
+          <div className="relative group">
+            <Receipt className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <select
               name="subscription_id"
               value={formData.subscription_id}
               onChange={handleSubscriptionChange}
               disabled={!formData.member_id || !!initialData}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all disabled:opacity-50"
             >
-              <option value="">No specific subscription / General payment</option>
+              <option value="">Direct Payment / General Deposit</option>
               {memberSubscriptions.map(sub => (
                 <option key={sub.id} value={sub.id}>
-                  {sub.plan_name} - ₹{sub.amount} ({sub.status})
+                  {sub.plan_name} • ₹{sub.amount} ({sub.status})
                 </option>
               ))}
             </select>
@@ -99,10 +100,10 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
         </div>
 
         {/* Amount Paid */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Amount Paid (₹)</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">₹</span>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Payment Received (₹)</label>
+          <div className="relative group">
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-emerald-400 transition-colors">₹</div>
             <input
               type="number"
               name="amount_paid"
@@ -112,97 +113,97 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
               value={formData.amount_paid}
               onChange={handleChange}
               placeholder="0.00"
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             />
           </div>
         </div>
 
         {/* Payment Date */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Payment Date</label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-            <input
-              type="date"
-              name="payment_date"
-              required
-              value={formData.payment_date}
-              onChange={handleChange}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors [color-scheme:dark]"
-            />
-          </div>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Transaction Date</label>
+          <DatePicker
+            value={formData.payment_date}
+            onChange={(val) => setFormData(prev => ({ ...prev, payment_date: val }))}
+          />
         </div>
 
         {/* Payment Method */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Payment Method</label>
-          <div className="relative">
-            <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Transfer Gateway</label>
+          <div className="relative group">
+            <CreditCard className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <select
               name="payment_method"
               value={formData.payment_method}
               onChange={handleChange}
               required
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             >
-              <option value="cash">Cash</option>
-              <option value="upi">UPI</option>
-              <option value="card">Card</option>
-              <option value="bank_transfer">Bank Transfer</option>
+              <option value="cash">Physical Cash</option>
+              <option value="upi">UPI Interface</option>
+              <option value="card">Credit / Debit Card</option>
+              <option value="bank_transfer">Direct Bank Transfer</option>
             </select>
           </div>
         </div>
 
         {/* Payment Status */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Payment Status</label>
-          <div className="relative">
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Ledger Status</label>
+          <div className="relative group">
             <select
               name="payment_status"
               value={formData.payment_status}
               onChange={handleChange}
               required
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl px-5 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             >
-              <option value="paid">Paid</option>
-              <option value="pending">Pending</option>
-              <option value="overdue">Overdue</option>
+              <option value="paid">Verified Paid</option>
+              <option value="pending">Pending Verification</option>
+              <option value="overdue">Overdue / Failed</option>
             </select>
           </div>
         </div>
 
         {/* Notes */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Notes (Optional)</label>
-          <div className="relative">
-            <FileText className="absolute left-4 top-4 w-5 h-5 text-slate-500" />
+        <div className="space-y-3 md:col-span-2">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Internal Reference (Optional)</label>
+          <div className="relative group">
+            <FileText className="absolute left-5 top-5 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <textarea
               name="notes"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Any additional details..."
+              placeholder="Record transaction ID or specific notes..."
               rows={3}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors resize-none"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all resize-none"
             />
           </div>
         </div>
 
       </div>
 
-      <div className="flex gap-4 pt-4 border-t border-slate-800">
+      <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-white/5">
         <button
           type="button"
           onClick={() => navigate('/payments')}
-          className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors"
+          className="order-2 sm:order-1 flex-1 py-4 px-6 bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-white/5"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+          className="order-1 sm:order-2 flex-1 py-4 px-6 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 hover:scale-[1.02] active:scale-95"
         >
-          {isSubmitting ? 'Saving...' : initialData ? 'Update Payment' : 'Record Payment'}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-3">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Processing…
+            </span>
+          ) : (
+            <span>{initialData ? 'Update Ledger' : 'Authorize Payment'}</span>
+          )}
         </button>
       </div>
     </form>

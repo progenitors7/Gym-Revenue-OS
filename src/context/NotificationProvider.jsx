@@ -34,17 +34,10 @@ export function NotificationProvider({ children }) {
   }, [gym]);
 
   useEffect(() => {
-    let mounted = true;
-    if (gym?.id && notifications.length === 0 && !loading) {
-      // Use setTimeout to avoid synchronous state updates in effect
-      setTimeout(() => {
-        if (mounted) fetchNotifications();
-      }, 0);
+    if (gym?.id) {
+      fetchNotifications();
     }
-    return () => {
-      mounted = false;
-    };
-  }, [gym?.id, fetchNotifications, notifications.length, loading]);
+  }, [gym?.id, fetchNotifications]);
 
   const markAsRead = async (id) => {
     // Optimistic UI update

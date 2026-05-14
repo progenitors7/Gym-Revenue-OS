@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CreditCard, Sparkles } from 'lucide-react';
 import PaymentForm from './PaymentForm';
 import { usePayments } from '../../hooks/usePayments';
 
@@ -28,30 +28,42 @@ export default function AddPaymentPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="p-6 sm:p-10 lg:p-12 max-w-3xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-6">
         <button
           onClick={() => navigate('/payments')}
-          className="p-2 hover:bg-slate-800 rounded-xl transition-colors"
+          className="group w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl"
         >
-          <ArrowLeft className="w-6 h-6 text-slate-400" />
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">Record Payment</h1>
-          <p className="text-slate-400 text-sm mt-1">Log a new payment from a member</p>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <CreditCard className="w-4 h-4 text-emerald-400" />
+            <p className="text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em]">Transaction</p>
+          </div>
+          <h1 className="text-3xl font-black text-white tracking-tighter">Record Deposit</h1>
         </div>
       </div>
 
       {/* Form Card */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-        {(error || submitError) && (
-          <div className="mb-6 bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-3 rounded-xl text-sm">
-            {error || submitError}
-          </div>
-        )}
-        
-        <PaymentForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      <div className="glass-card border border-white/5 rounded-[2.5rem] p-8 sm:p-12 relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          {(error || submitError) && (
+            <div className="mb-10 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-6 py-4 rounded-2xl text-xs font-bold uppercase tracking-wider animate-shake">
+              {error || submitError}
+            </div>
+          )}
+          
+          <PaymentForm onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+        </div>
+      </div>
+
+      {/* Tip */}
+      <div className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 max-w-sm mx-auto sm:mx-0">
+        <Sparkles className="w-4 h-4 text-emerald-400" />
+        <p className="text-[11px] font-bold text-emerald-400 uppercase tracking-wider">Payments update revenue metrics in real-time</p>
       </div>
     </div>
   );

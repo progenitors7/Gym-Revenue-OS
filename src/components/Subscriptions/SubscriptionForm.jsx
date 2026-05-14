@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, User, Tag } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
+import DatePicker from '../UI/DatePicker';
 
 export default function SubscriptionForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
@@ -33,23 +34,23 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <form onSubmit={handleSubmit} className="space-y-10">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Member Selection */}
-        <div className="space-y-2 md:col-span-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Select Member</label>
-          <div className="relative">
-            <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3 md:col-span-2">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Select Athlete</label>
+          <div className="relative group">
+            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <select
               name="member_id"
               value={formData.member_id}
               onChange={handleChange}
               required
-              disabled={!!initialData} // Cannot change member when editing
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors disabled:opacity-50"
+              disabled={!!initialData}
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all disabled:opacity-50"
             >
-              <option value="" disabled>Choose a member...</option>
+              <option value="" disabled>Choose an athlete...</option>
               {members.map(member => (
                 <option key={member.id} value={member.id}>
                   {member.full_name} ({member.phone_number})
@@ -60,27 +61,27 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
         </div>
 
         {/* Plan Name */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Plan Name</label>
-          <div className="relative">
-            <Tag className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Subscription Plan</label>
+          <div className="relative group">
+            <Tag className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <input
               type="text"
               name="plan_name"
               required
               value={formData.plan_name}
               onChange={handleChange}
-              placeholder="e.g. Pro Membership"
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+              placeholder="e.g. Platinum Elite"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             />
           </div>
         </div>
 
         {/* Amount */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Amount (₹)</label>
-          <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 font-bold text-slate-500">₹</span>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Investment (₹)</label>
+          <div className="relative group">
+            <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-emerald-400 transition-colors">₹</div>
             <input
               type="number"
               name="amount"
@@ -90,84 +91,73 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
               value={formData.amount}
               onChange={handleChange}
               placeholder="0.00"
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             />
           </div>
         </div>
 
         {/* Duration Type */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Duration Type</label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Lifecycle Duration</label>
+          <div className="relative group">
+            <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <select
               name="duration_type"
               value={formData.duration_type}
               onChange={handleChange}
               required
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white appearance-none focus:outline-none focus:border-emerald-500 transition-colors"
+              className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white text-sm font-medium appearance-none focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             >
-              <option value="monthly">Monthly (+30 Days)</option>
-              <option value="quarterly">Quarterly (+90 Days)</option>
-              <option value="yearly">Yearly (+365 Days)</option>
-              <option value="custom">Custom Date</option>
+              <option value="monthly">Monthly Cycle (+30 Days)</option>
+              <option value="quarterly">Quarterly Cycle (+90 Days)</option>
+              <option value="yearly">Annual Cycle (+365 Days)</option>
+              <option value="custom">Custom Term</option>
             </select>
           </div>
         </div>
 
         {/* Start Date */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-slate-400 ml-1">Start Date</label>
-          <div className="relative">
-            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-            <input
-              type="date"
-              name="start_date"
-              required
-              value={formData.start_date}
-              onChange={handleChange}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors [color-scheme:dark]"
-            />
-          </div>
+        <div className="space-y-3">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Activation Date</label>
+          <DatePicker
+            value={formData.start_date}
+            onChange={(val) => setFormData(prev => ({ ...prev, start_date: val }))}
+          />
         </div>
 
         {/* Custom Expiry Date */}
         {formData.duration_type === 'custom' && (
-          <div className="space-y-2 md:col-span-2">
-            <label className="text-sm font-medium text-slate-400 ml-1">Custom Expiry Date</label>
-            <div className="relative">
-              <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-              <input
-                type="date"
-                name="expiry_date"
-                required={formData.duration_type === 'custom'}
-                value={formData.expiry_date}
-                onChange={handleChange}
-                className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500 transition-colors [color-scheme:dark]"
-              />
-            </div>
-            <p className="text-xs text-slate-500 ml-1 mt-1">
-              For standard durations (Monthly, Quarterly, Yearly), the expiry date is calculated automatically.
-            </p>
+          <div className="space-y-3 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <label className="block text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] ml-1">Custom Termination Date</label>
+            <DatePicker
+              value={formData.expiry_date}
+              onChange={(val) => setFormData(prev => ({ ...prev, expiry_date: val }))}
+            />
           </div>
         )}
-
       </div>
 
-      <div className="flex gap-4 pt-4 border-t border-slate-800">
+      <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-white/5">
         <button
           type="button"
           onClick={() => navigate('/subscriptions')}
-          className="flex-1 py-3 px-4 bg-slate-800 hover:bg-slate-700 text-white rounded-xl font-medium transition-colors"
+          className="order-2 sm:order-1 flex-1 py-4 px-6 bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all border border-white/5"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={isSubmitting}
-          className="flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-colors disabled:opacity-50"
+          className="order-1 sm:order-2 flex-1 py-4 px-6 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 hover:scale-[1.02] active:scale-95"
         >
-          {isSubmitting ? 'Saving...' : initialData ? 'Update Subscription' : 'Create Subscription'}
+          {isSubmitting ? (
+            <span className="flex items-center justify-center gap-3">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              Processing…
+            </span>
+          ) : (
+            <span>{initialData ? 'Update Record' : 'Activate Subscription'}</span>
+          )}
         </button>
       </div>
     </form>

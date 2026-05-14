@@ -1,31 +1,31 @@
 /**
  * StatusBadge.jsx
- * Displays a colour-coded pill for member status.
+ * Displays a premium, modern pill for member status.
  */
 export default function StatusBadge({ status }) {
   const map = {
     active: {
       label: 'Active',
-      cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-      dot: 'bg-emerald-400',
+      cls: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-lg shadow-emerald-500/5',
+      dot: 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.6)]',
     },
     expiring_soon: {
       label: 'Expiring Soon',
-      cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-      dot: 'bg-amber-400',
+      cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-lg shadow-amber-500/5',
+      dot: 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.6)]',
     },
     expired: {
       label: 'Expired',
-      cls: 'bg-red-500/10 text-red-400 border-red-500/20',
-      dot: 'bg-red-400',
+      cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-lg shadow-rose-500/5',
+      dot: 'bg-rose-400 shadow-[0_0_8px_rgba(251,113,133,0.6)]',
     },
   }
 
   const cfg = map[status] ?? map.expired
 
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium border ${cfg.cls}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+    <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border backdrop-blur-sm transition-all hover:scale-105 ${cfg.cls}`}>
+      <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${cfg.dot}`} />
       {cfg.label}
     </span>
   )

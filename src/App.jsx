@@ -5,6 +5,10 @@ import { GymProvider } from './context/GymProvider'
 import { NotificationProvider } from './context/NotificationProvider'
 import ProtectedRoute from './components/Layout/ProtectedRoute'
 import AppLayout from './components/Layout/AppLayout'
+import ErrorBoundary from './components/Common/ErrorBoundary'
+import SuperAdminRoute from './components/Layout/SuperAdminRoute'
+import Logo from './components/UI/Logo'
+import { motion } from 'framer-motion'
 
 
 const AuthPage = React.lazy(() => import('./components/Auth/AuthPage'))
@@ -19,11 +23,33 @@ const AddPaymentPage = React.lazy(() => import('./components/Payments/AddPayment
 const NotificationsPage = React.lazy(() => import('./pages/NotificationsPage'))
 const ResetPasswordPage = React.lazy(() => import('./pages/ResetPasswordPage'))
 const SettingsPage = React.lazy(() => import('./pages/SettingsPage'))
+const SuperAdminPage = React.lazy(() => import('./pages/SuperAdminPage'))
+const BillingPage = React.lazy(() => import('./pages/BillingPage'))
 
 function LoadingScreen() {
   return (
-    <div className="flex-1 flex items-center justify-center h-full min-h-[50vh]">
-      <div className="w-8 h-8 border-4 border-sky-500/20 border-t-sky-500 rounded-full animate-spin" />
+    <div className="flex-1 flex flex-col items-center justify-center h-full min-h-[50vh] gap-4">
+      <motion.div
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.5, 1, 0.5] 
+        }}
+        transition={{ 
+          duration: 2, 
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      >
+        <Logo className="w-12 h-12 drop-shadow-[0_0_15px_rgba(134,59,255,0.3)]" />
+      </motion.div>
+      <div className="w-8 h-1 border-2 border-white/5 bg-white/5 rounded-full overflow-hidden">
+        <motion.div 
+          className="h-full bg-[#863BFF]"
+          initial={{ width: "0%" }}
+          animate={{ width: "100%" }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+        />
+      </div>
     </div>
   )
 }
@@ -33,9 +59,11 @@ function Protected({ children }) {
     <ProtectedRoute>
       <NotificationProvider>
         <AppLayout>
-          <Suspense fallback={<LoadingScreen />}>
-            {children}
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<LoadingScreen />}>
+              {children}
+            </Suspense>
+          </ErrorBoundary>
         </AppLayout>
       </NotificationProvider>
     </ProtectedRoute>
@@ -47,7 +75,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <GymProvider>
-          <Suspense fallback={<div className="h-screen flex items-center justify-center bg-slate-900"><LoadingScreen /></div>}>
+          <Suspense fallback={<div className="h-screen flex items-center justify-center bg-[#1c1c1c]"><LoadingScreen /></div>}>
             <Routes>
               {/* ── Public ── */}
             <Route path="/" element={<AuthPage />} />
@@ -68,6 +96,8 @@ export default function App() {
 
             <Route path="/notifications"     element={<Protected><NotificationsPage /></Protected>} />
             <Route path="/settings"          element={<Protected><SettingsPage /></Protected>} />
+            <Route path="/billing"           element={<Protected><BillingPage /></Protected>} />
+            <Route path="/super-admin"      element={<Protected><SuperAdminRoute><SuperAdminPage /></SuperAdminRoute></Protected>} />
 
             {/* ── Catch-all ── */}
             <Route path="*" element={<Navigate to="/" replace />} />

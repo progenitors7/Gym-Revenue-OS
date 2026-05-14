@@ -1,75 +1,99 @@
 import { formatDistanceToNow } from 'date-fns';
+import { 
+  UserPlus, 
+  CreditCard, 
+  Bell, 
+  Clock, 
+  History,
+  TrendingUp,
+  Activity
+} from 'lucide-react';
+import { motion } from 'framer-motion';
+
+const isValidDate = (d) => d instanceof Date && !isNaN(d);
 
 export default function RecentActivityFeed({ activities }) {
   if (!activities || activities.length === 0) {
     return (
-      <div className="p-8 text-center bg-slate-800/40 border border-slate-700/50 rounded-2xl">
-        <p className="text-slate-400 text-sm">No recent activity found.</p>
+      <div className="glass-card rounded-3xl p-8 text-center h-full flex flex-col items-center justify-center relative overflow-hidden group">
+        <div className="absolute -bottom-12 -left-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-[#3B82F6]"></div>
+        <div className="w-12 h-12 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 border border-white/10 shadow-inner relative z-10">
+          <History className="w-5 h-5 text-[#94A3B8]" />
+        </div>
+        <p className="text-[#64748B] text-xs font-semibold uppercase tracking-widest relative z-10">No recent activity yet</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5">
-      <h3 className="text-white font-semibold mb-4 flex items-center gap-2">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" viewBox="0 0 20 20" fill="currentColor">
-          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-        </svg>
+    <div className="glass-card rounded-3xl p-6 h-full relative overflow-hidden group">
+      <div className="absolute -bottom-12 -left-12 w-48 h-48 rounded-full blur-3xl opacity-0 group-hover:opacity-[0.05] transition-opacity duration-500 bg-[#3B82F6]"></div>
+      
+      <h3 className="text-[#F8FAFC] font-extrabold text-lg mb-8 flex items-center gap-3 relative z-10">
+        <div className="w-10 h-10 rounded-2xl bg-[#3B82F6]/10 flex items-center justify-center border border-[#3B82F6]/20 shadow-inner">
+          <Activity className="w-5 h-5 text-[#3B82F6]" />
+        </div>
         Recent Activity
       </h3>
-      <div className="space-y-4">
+
+      <div className="space-y-6 relative z-10">
         {activities.map((activity, index) => {
-          // Icons based on type
-          let icon;
-          let iconColor;
+          let Icon = Bell;
+          let iconColor = "bg-[#64748B]/10 text-[#94A3B8] border-[#64748B]/20";
+          let highlightColor = "group-hover:text-[#94A3B8]";
           
           if (activity.type === 'member_joined') {
-            icon = (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
-            );
-            iconColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+            Icon = UserPlus;
+            iconColor = "bg-[#22C55E]/10 text-[#22C55E] border-[#22C55E]/20";
+            highlightColor = "group-hover/item:text-[#22C55E]";
           } else if (activity.type === 'payment_received') {
-            icon = (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            );
-            iconColor = "bg-indigo-500/10 text-indigo-400 border-indigo-500/20";
-          } else {
-            icon = (
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            );
-            iconColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+            Icon = CreditCard;
+            iconColor = "bg-[#3B82F6]/10 text-[#3B82F6] border-[#3B82F6]/20";
+            highlightColor = "group-hover/item:text-[#3B82F6]";
+          } else if (activity.type === 'subscription_updated') {
+            Icon = TrendingUp;
+            iconColor = "bg-[#8B5CF6]/10 text-[#A78BFA] border-[#8B5CF6]/20";
+            highlightColor = "group-hover/item:text-[#A78BFA]";
           }
 
           return (
-            <div key={`${activity.type}-${activity.id}-${index}`} className="flex gap-4">
-              {/* Timeline Line */}
-              <div className="flex flex-col items-center">
-                <div className={`flex items-center justify-center w-8 h-8 rounded-lg border ${iconColor}`}>
-                  {icon}
+            <motion.div 
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              key={`${activity.type}-${activity.id}-${index}`} 
+              className="group/item flex gap-4 relative"
+            >
+              {/* Timeline Connector */}
+              {index !== activities.length - 1 && (
+                <div className="absolute left-[20px] top-10 bottom-[-24px] w-px bg-white/5 group-hover/item:bg-white/10 transition-colors" />
+              )}
+              
+              {/* Icon Container */}
+              <div className="flex-shrink-0 relative">
+                <div className={`flex items-center justify-center w-10 h-10 rounded-xl border shadow-sm transition-all duration-300 ${iconColor} group-hover/item:scale-110`}>
+                  <Icon className="w-4 h-4" />
                 </div>
-                {index !== activities.length - 1 && (
-                  <div className="w-px h-full bg-slate-700/50 mt-2 mb-1"></div>
-                )}
               </div>
               
               {/* Content */}
-              <div className="pb-4">
-                <p className="text-sm font-medium text-white">{activity.title}</p>
-                <p className="text-sm text-slate-400 mt-0.5">{activity.description}</p>
-                <p className="text-xs text-slate-500 mt-1">
-                  {activity.date ? formatDistanceToNow(new Date(activity.date), { addSuffix: true }) : 'Recently'}
-                </p>
+              <div className="flex-1 pt-0.5 pb-2">
+                <div className="flex items-start justify-between gap-2">
+                  <p className={`text-[14px] font-bold text-[#F8FAFC] transition-colors ${highlightColor}`}>{activity.title}</p>
+                   <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest whitespace-nowrap pt-1">
+                    {(() => {
+                      const d = new Date(activity.date);
+                      return activity.date && !isNaN(d.getTime()) ? formatDistanceToNow(d, { addSuffix: true }) : 'Recently';
+                    })()}
+                  </span>
+                </div>
+                <p className="text-[12px] text-[#94A3B8] font-medium mt-1 leading-relaxed">{activity.description}</p>
               </div>
-            </div>
+            </motion.div>
           );
         })}
       </div>
     </div>
   );
 }
+

@@ -8,6 +8,8 @@
  *  - mode: 'add' | 'edit'
  */
 import { useState } from 'react'
+import { User, Phone, Activity, Award, Calendar, FileText } from 'lucide-react'
+import DatePicker from '../UI/DatePicker'
 
 const PLANS = ['Monthly', 'Quarterly', '6 Months', 'Annual', 'Day Pass', 'Custom']
 
@@ -23,17 +25,19 @@ const DEFAULTS = {
 
 function Field({ label, required, children, error }) {
   return (
-    <div>
-      <label className="block text-sm font-medium text-slate-300 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
+    <div className="space-y-2">
+      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">
+        {label} {required && <span className="text-rose-500">*</span>}
       </label>
-      {children}
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      <div className="relative group">
+        {children}
+      </div>
+      {error && <p className="mt-1 text-[10px] font-bold text-rose-400 uppercase tracking-wider ml-1">{error}</p>}
     </div>
   )
 }
 
-const inputCls = 'w-full px-3.5 py-2.5 rounded-lg bg-slate-900 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all'
+const inputCls = 'w-full pl-12 pr-5 py-4 rounded-2xl bg-white/[0.03] border border-white/5 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all'
 
 export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mode = 'add' }) {
   const [form, setForm] = useState({ ...DEFAULTS, ...initialValues })
@@ -76,9 +80,9 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
       {globalError && (
-        <div className="px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <div className="px-6 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider animate-shake">
           {globalError}
         </div>
       )}
@@ -86,6 +90,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
       {/* Row 1: Name + Phone */}
       <div className="grid sm:grid-cols-2 gap-5">
         <Field label="Full Name" required error={errors.full_name}>
+          <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
           <input
             id="member-full-name"
             type="text"
@@ -96,6 +101,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
           />
         </Field>
         <Field label="Phone Number" error={errors.phone_number}>
+          <Phone className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
           <input
             id="member-phone"
             type="tel"
@@ -110,6 +116,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
       {/* Row 2: Gender + Plan */}
       <div className="grid sm:grid-cols-2 gap-5">
         <Field label="Gender">
+          <Activity className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
           <select id="member-gender" value={form.gender} onChange={set('gender')} className={inputCls}>
             <option value="">Select gender</option>
             <option value="male">Male</option>
@@ -118,6 +125,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
           </select>
         </Field>
         <Field label="Membership Plan" required error={errors.membership_plan}>
+          <Award className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
           <select id="member-plan" value={form.membership_plan} onChange={set('membership_plan')} className={inputCls}>
             <option value="">Select plan</option>
             {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -128,44 +136,39 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
       {/* Row 3: Join date + Expiry date */}
       <div className="grid sm:grid-cols-2 gap-5">
         <Field label="Join Date" required error={errors.join_date}>
-          <input
-            id="member-join-date"
-            type="date"
+          <DatePicker
             value={form.join_date}
-            onChange={set('join_date')}
-            className={inputCls}
+            onChange={(val) => setForm(f => ({ ...f, join_date: val }))}
           />
         </Field>
         <Field label="Expiry Date" required error={errors.expiry_date}>
-          <input
-            id="member-expiry-date"
-            type="date"
+          <DatePicker
             value={form.expiry_date}
-            onChange={set('expiry_date')}
-            className={inputCls}
+            onChange={(val) => setForm(f => ({ ...f, expiry_date: val }))}
           />
         </Field>
       </div>
 
       {/* Notes */}
       <Field label="Notes">
+        <FileText className="absolute left-5 top-5 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
         <textarea
           id="member-notes"
           value={form.notes}
           onChange={set('notes')}
           placeholder="Optional notes about this member…"
           rows={3}
-          className={`${inputCls} resize-none`}
+          className={`${inputCls} resize-none pt-4`}
         />
       </Field>
 
       {/* Actions */}
-      <div className="flex justify-end gap-3 pt-2">
+      <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8">
         <button
           type="button"
           onClick={onCancel}
           disabled={submitting}
-          className="px-5 py-2.5 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-500 text-sm font-medium transition-colors disabled:opacity-50"
+          className="order-2 sm:order-1 px-8 py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-slate-400 hover:text-white text-xs font-black uppercase tracking-widest transition-all border border-white/5 disabled:opacity-50"
         >
           Cancel
         </button>
@@ -173,14 +176,18 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
           id="member-form-submit"
           type="submit"
           disabled={submitting}
-          className="px-5 py-2.5 rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white text-sm font-semibold transition-colors min-w-[120px]"
+          className="order-1 sm:order-2 group relative px-10 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95"
         >
           {submitting ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              {mode === 'add' ? 'Adding…' : 'Saving…'}
+            <span className="flex items-center justify-center gap-3">
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              {mode === 'add' ? 'Processing…' : 'Syncing…'}
             </span>
-          ) : mode === 'add' ? 'Add Member' : 'Save Changes'}
+          ) : (
+            <span className="flex items-center justify-center gap-2">
+              {mode === 'add' ? 'Initialize Athlete' : 'Commit Changes'}
+            </span>
+          )}
         </button>
       </div>
     </form>

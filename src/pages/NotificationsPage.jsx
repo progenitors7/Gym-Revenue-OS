@@ -1,65 +1,129 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { 
+  Bell, 
+  CheckCircle2, 
+  Clock, 
+  ArrowRight, 
+  Trash2, 
+  AlertTriangle, 
+  AlertCircle,
+  CreditCard,
+  User,
+  Sparkles,
+  ArrowLeft
+} from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { formatDistanceToNow } from 'date-fns';
 
 export default function NotificationsPage() {
   const { notifications, loading, markAsRead, markAllAsRead } = useNotifications();
-  const [filter, setFilter] = useState('all'); // 'all', 'unread', 'payments', 'memberships'
+  const [filter, setFilter] = useState('all');
+  const navigate = useNavigate();
 
   const filteredNotifications = notifications.filter(n => {
     if (filter === 'unread') return !n.is_read;
-    if (filter === 'payments') return n.type.includes('payment');
-    if (filter === 'memberships') return n.type.includes('membership');
+    if (filter === 'payments') return n.type?.includes('payment');
+    if (filter === 'memberships') return n.type?.includes('membership');
+    if (filter === 'announcements') return n.type === 'system_broadcast';
     return true;
   });
 
-  const getIcon = (type) => {
-    if (type === 'membership_expiring') return { icon: '⏳', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
-    if (type === 'membership_expired') return { icon: '❌', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
-    if (type === 'payment_due') return { icon: '💰', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
-    if (type === 'payment_overdue') return { icon: '🚨', color: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
-    return { icon: '🔔', color: 'bg-slate-500/10 text-slate-400 border-slate-500/20' };
+  const getNotificationStyles = (type) => {
+    switch (type) {
+      case 'membership_expiring':
+        return { 
+          icon: <Clock className="w-5 h-5" />, 
+          color: 'text-amber-500', 
+          bg: 'bg-amber-500/10', 
+          label: 'Expiring' 
+        };
+      case 'membership_expired':
+        return { 
+          icon: <AlertCircle className="w-5 h-5" />, 
+          color: 'text-red-500', 
+          bg: 'bg-red-500/10', 
+          label: 'Expired'
+        };
+      case 'payment_due':
+        return { 
+          icon: <CreditCard className="w-5 h-5" />, 
+          color: 'text-[#3390ec]', 
+          bg: 'bg-[#3390ec]/10', 
+          label: 'Pending'
+        };
+      case 'payment_overdue':
+        return { 
+          icon: <AlertTriangle className="w-5 h-5" />, 
+          color: 'text-red-500', 
+          bg: 'bg-red-500/10', 
+          label: 'Overdue'
+        };
+      case 'system_broadcast':
+        return { 
+          icon: <Sparkles className="w-5 h-5" />, 
+          color: 'text-indigo-500', 
+          bg: 'bg-indigo-500/10', 
+          label: 'Announcement'
+        };
+      default:
+        return { 
+          icon: <Bell className="w-5 h-5" />, 
+          color: 'text-gray-400', 
+          bg: 'bg-white/5', 
+          label: 'System'
+        };
+    }
   };
 
   const getActionLink = (n) => {
-    if (n.type.includes('payment')) return '/payments';
+    if (n.type === 'system_broadcast') return '/dashboard';
+    if (n.type?.includes('payment')) return '/payments';
     return '/subscriptions';
   };
 
   if (loading) {
     return (
-      <div className="p-5 sm:p-8 max-w-4xl mx-auto flex justify-center mt-20">
-        <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="p-12 flex flex-col items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-2 border-[#3390ec]/20 border-t-[#3390ec] rounded-full animate-spin" />
+        <p className="text-gray-500 text-sm mt-4">Loading notifications...</p>
       </div>
     );
   }
 
   return (
-    <div className="p-5 sm:p-7 lg:p-8 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Notifications</h1>
-          <p className="text-slate-400 text-sm mt-1">Operational alerts for your gym.</p>
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate('/dashboard')}
+            className="p-2 rounded-lg bg-[#212121] border border-white/5 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-bold text-white">Notifications</h1>
         </div>
+
         <button 
           onClick={markAllAsRead}
-          className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg border border-slate-700 transition-colors"
+          className="flex items-center justify-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg border border-white/5 transition-all text-sm font-medium"
         >
-          Mark all as read
+          <CheckCircle2 className="w-4 h-4 text-[#3390ec]" />
+          <span>Mark all as read</span>
         </button>
       </div>
 
-      {/* Filters */}
-      <div className="flex gap-2 overflow-x-auto pb-4 mb-4 hide-scrollbar">
-        {['all', 'unread', 'payments', 'memberships'].map(f => (
+      {/* Control Bar */}
+      <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[#212121] border border-white/5 rounded-xl">
+        {['all', 'unread', 'payments', 'memberships', 'announcements'].map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+            className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
               filter === f 
-                ? 'bg-sky-500/10 text-sky-400 border border-sky-500/20' 
-                : 'bg-slate-800 text-slate-400 hover:text-white border border-slate-700'
+                ? 'bg-[#3390ec] text-white' 
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
             }`}
           >
             {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -67,63 +131,76 @@ export default function NotificationsPage() {
         ))}
       </div>
 
-      {/* List */}
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl overflow-hidden">
+      {/* Notification List */}
+      <div className="space-y-3">
         {filteredNotifications.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center">
-            <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center text-3xl mb-4">🔔</div>
-            <h3 className="text-white font-medium mb-1">No notifications found</h3>
-            <p className="text-slate-500 text-sm">You're all caught up!</p>
+          <div className="bg-[#212121] border border-white/5 rounded-xl p-16 text-center">
+             <div className="w-16 h-16 bg-[#1c1c1c] rounded-2xl flex items-center justify-center mx-auto mb-6">
+               <Sparkles className="w-8 h-8 text-gray-600" />
+             </div>
+             <h3 className="text-xl font-bold text-white mb-2">All caught up!</h3>
+             <p className="text-gray-400 text-sm">No notifications found in this category.</p>
           </div>
         ) : (
-          <div className="divide-y divide-slate-700/50">
-            {filteredNotifications.map(notification => {
-              const { icon, color } = getIcon(notification.type);
+          <div className="grid gap-3">
+            {filteredNotifications.map(n => {
+              const styles = getNotificationStyles(n.type);
               
               return (
                 <div 
-                  key={notification.id} 
-                  className={`p-4 sm:p-5 flex items-start gap-4 transition-colors ${notification.is_read ? 'opacity-70 hover:opacity-100' : 'bg-slate-800/60'}`}
+                  key={n.id} 
+                  className={`bg-[#212121] border rounded-xl p-5 transition-all ${
+                    n.is_read 
+                      ? 'border-white/5 opacity-60' 
+                      : 'border-[#3390ec]/20'
+                  }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border flex-shrink-0 text-xl ${color}`}>
-                    {icon}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 mb-1">
-                      <h4 className={`font-semibold text-sm truncate ${notification.is_read ? 'text-slate-300' : 'text-white'}`}>
-                        {notification.title}
-                      </h4>
-                      <span className="text-xs text-slate-500 whitespace-nowrap">
-                        {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                      </span>
+                  <div className="flex items-start gap-4">
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${styles.bg} ${styles.color}`}>
+                      {styles.icon}
                     </div>
                     
-                    <p className="text-slate-400 text-sm mb-3">
-                      {notification.message}
-                    </p>
-                    
-                    <div className="flex items-center gap-4">
-                      {!notification.is_read && (
-                        <button 
-                          onClick={() => markAsRead(notification.id)}
-                          className="text-xs font-medium text-slate-400 hover:text-white"
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <h4 className={`font-bold text-sm sm:text-base tracking-tight ${n.is_read ? 'text-gray-400' : 'text-white'}`}>
+                          {n.title}
+                        </h4>
+                        <span className="text-[10px] text-gray-500 whitespace-nowrap">
+                          {(() => {
+                            const d = new Date(n.created_at);
+                            return n.created_at && !isNaN(d.getTime()) ? formatDistanceToNow(d, { addSuffix: true }) : 'Just now';
+                          })()}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-400 text-xs sm:text-sm mb-4 leading-relaxed line-clamp-2">
+                        {n.message}
+                      </p>
+                      
+                      <div className="flex items-center gap-4">
+                        {!n.is_read && (
+                          <button 
+                            onClick={() => markAsRead(n.id)}
+                            className="text-[11px] font-bold text-[#3390ec] hover:underline flex items-center gap-1"
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Acknowledge
+                          </button>
+                        )}
+                        <Link 
+                          to={getActionLink(n)} 
+                          className="text-[11px] font-bold text-gray-400 hover:text-white flex items-center gap-1"
                         >
-                          Mark as read
-                        </button>
-                      )}
-                      <Link 
-                        to={getActionLink(notification)} 
-                        className="text-xs font-medium text-sky-400 hover:text-sky-300"
-                      >
-                        Take Action &rarr;
-                      </Link>
+                          View Details
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
                     </div>
+
+                    {!n.is_read && (
+                      <div className="w-2 h-2 bg-[#3390ec] rounded-full shrink-0 mt-1.5" />
+                    )}
                   </div>
-                  
-                  {!notification.is_read && (
-                    <div className="w-2.5 h-2.5 rounded-full bg-sky-500 mt-2 flex-shrink-0"></div>
-                  )}
                 </div>
               );
             })}

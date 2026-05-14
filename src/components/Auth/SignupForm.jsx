@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../hooks/useAuth'
+import { Mail, Lock, Eye, EyeOff, Loader2, UserPlus, CheckCircle2 } from 'lucide-react'
+import { motion } from 'framer-motion'
 
 export default function SignupForm({ onSwitch }) {
   const { signUp, signInWithGoogle } = useAuth()
@@ -48,98 +50,93 @@ export default function SignupForm({ onSwitch }) {
 
   if (success) {
     return (
-      <div className="w-full text-center">
-        <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-7 h-7 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-        </div>
-        <h2 className="text-xl font-bold text-white mb-2">Check your email</h2>
-        <p className="text-slate-400 text-sm mb-6">
-          We sent a confirmation link to <span className="text-white font-medium">{email}</span>. Click it to activate your account.
-        </p>
-        <button
-          id="back-to-login-btn"
-          onClick={onSwitch}
-          className="text-sky-400 hover:text-sky-300 font-medium text-sm transition-colors"
+      <div className="w-full text-center space-y-8 py-4">
+        <motion.div 
+          initial={{ scale: 0.5, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="w-20 h-20 rounded-[2.5rem] bg-emerald-500/10 flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/5 border border-emerald-500/20"
         >
-          ← Back to sign in
+          <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+        </motion.div>
+        <div className="space-y-3">
+          <h2 className="text-2xl font-black text-white tracking-tight uppercase italic">Check Your Email</h2>
+          <p className="text-slate-400 text-sm leading-relaxed font-medium">
+            Verification link sent to <br />
+            <span className="text-emerald-500 font-bold">{email}</span>
+          </p>
+        </div>
+        <button
+          onClick={onSwitch}
+          className="text-[10px] font-black text-emerald-500 hover:text-emerald-400 uppercase tracking-[0.2em] transition-all border-b border-emerald-500/20 pb-1"
+        >
+          Return to Login
         </button>
       </div>
     )
   }
 
   return (
-    <div className="w-full">
-      <div className="mb-7">
-        <h2 className="text-2xl font-bold text-white tracking-tight">Create your account</h2>
-        <p className="mt-1 text-sm text-slate-400">Start managing your gym revenue for free</p>
-      </div>
-
+    <div className="w-full space-y-8">
       <button
         type="button"
         onClick={handleGoogleSignup}
         disabled={loading}
-        className="w-full mb-6 flex items-center justify-center gap-3 py-2.5 px-4 rounded-lg bg-white hover:bg-slate-50 text-slate-900 font-semibold text-sm transition-all shadow-lg shadow-white/5 active:scale-[0.98]"
+        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl bg-white hover:bg-slate-100 text-black font-bold text-xs transition-all active:scale-[0.98] disabled:opacity-50 border border-white/10"
       >
-        <svg className="w-5 h-5" viewBox="0 0 24 24">
-          <path
-            fill="#4285F4"
-            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-          />
-          <path
-            fill="#34A853"
-            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-          />
-          <path
-            fill="#FBBC05"
-            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-          />
-          <path
-            fill="#EA4335"
-            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-          />
+        <svg width="18" height="18" viewBox="0 0 18 18">
+          <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4"/>
+          <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.859-3.048.859-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+          <path d="M3.964 10.706c-.18-.54-.282-1.117-.282-1.706s.102-1.166.282-1.706V4.962H.957C.347 6.175 0 7.55 0 9s.347 2.825.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+          <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.483 0 2.443 2.017.957 4.962L3.964 7.294C4.672 5.167 6.656 3.58 9 3.58z" fill="#EA4335"/>
         </svg>
         Sign up with Google
       </button>
 
-      <div className="relative mb-6">
+      <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-slate-700/50"></div>
+          <div className="w-full border-t border-white/5"></div>
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-slate-900 px-3 text-slate-500 font-medium">Or continue with email</span>
+        <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-[0.2em]">
+          <span className="bg-[#1A1F2B] px-4 text-slate-600">OR</span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 px-4 py-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="px-4 py-3 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black uppercase tracking-widest text-center"
+        >
           {error}
-        </div>
+        </motion.div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="signup-email" className="block text-sm font-medium text-slate-300 mb-1.5">
-            Email address
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="space-y-2">
+          <label htmlFor="signup-email" className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+            Email Address
           </label>
-          <input
-            id="signup-email"
-            type="email"
-            required
-            autoComplete="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@gymname.com"
-            className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
-          />
+          <div className="relative group">
+            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-500 transition-colors" />
+            <input
+              id="signup-email"
+              type="email"
+              required
+              autoComplete="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="operator@gymrevenue.os"
+              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-black/40 border border-white/5 text-white placeholder-slate-700 text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium"
+            />
+          </div>
         </div>
 
-        <div>
-          <label htmlFor="signup-password" className="block text-sm font-medium text-slate-300 mb-1.5">
-            Password
+        <div className="space-y-2">
+          <label htmlFor="signup-password" className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+            Choose Password
           </label>
-          <div className="relative">
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-500 transition-colors" />
             <input
               id="signup-password"
               type={showPassword ? 'text' : 'password'}
@@ -148,67 +145,65 @@ export default function SignupForm({ onSwitch }) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 6 characters"
-              className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all pr-11"
+              className="w-full pl-12 pr-12 py-3.5 rounded-2xl bg-black/40 border border-white/5 text-white placeholder-slate-700 text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors"
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-emerald-500 transition-colors"
             >
-              {showPassword ? (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                </svg>
-              )}
+              {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
             </button>
           </div>
         </div>
 
-        <div>
-          <label htmlFor="signup-confirm-password" className="block text-sm font-medium text-slate-300 mb-1.5">
-            Confirm password
+        <div className="space-y-2">
+          <label htmlFor="signup-confirm-password" className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider ml-1">
+            Confirm Password
           </label>
-          <input
-            id="signup-confirm-password"
-            type={showPassword ? 'text' : 'password'}
-            required
-            autoComplete="new-password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Re-enter password"
-            className="w-full px-3.5 py-2.5 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 focus:border-transparent transition-all"
-          />
+          <div className="relative group">
+            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600 group-focus-within:text-emerald-500 transition-colors" />
+            <input
+              id="signup-confirm-password"
+              type={showPassword ? 'text' : 'password'}
+              required
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Re-enter passcode"
+              className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-black/40 border border-white/5 text-white placeholder-slate-700 text-sm focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all font-medium"
+            />
+          </div>
         </div>
 
         <button
           id="signup-submit-btn"
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 px-4 rounded-lg bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors mt-2"
+          className="w-full py-4 px-6 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-sm transition-all shadow-xl shadow-emerald-500/20 active:scale-[0.98] flex items-center justify-center gap-3 mt-4"
         >
           {loading ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              Creating account...
-            </span>
-          ) : 'Create account'}
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Creating...
+            </>
+          ) : (
+            <>
+              Create Account
+              <UserPlus className="w-4 h-4" />
+            </>
+          )}
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-slate-400">
-        Already have an account?{' '}
+      <p className="pt-6 text-center text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+        Have an account?{' '}
         <button
           id="switch-to-login"
           onClick={onSwitch}
-          className="text-sky-400 hover:text-sky-300 font-medium transition-colors"
+          className="text-emerald-500 hover:text-emerald-400 transition-colors"
         >
-          Sign in
+          Login
         </button>
       </p>
     </div>

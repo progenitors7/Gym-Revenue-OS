@@ -1,7 +1,41 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Receipt } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { 
+  Plus, 
+  Search, 
+  Receipt, 
+  DollarSign, 
+  Calendar, 
+  Wallet, 
+  CreditCard, 
+  Smartphone, 
+  Building2,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  MoreVertical,
+  User,
+  ArrowRight,
+  TrendingUp
+} from 'lucide-react';
 import { usePayments } from '../../hooks/usePayments';
+import StatusBadge from '../UI/StatusBadge';
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
+};
 
 export default function PaymentsPage() {
   const navigate = useNavigate();
@@ -20,12 +54,13 @@ export default function PaymentsPage() {
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20';
-      case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'overdue': return 'bg-red-500/10 text-red-500 border-red-500/20';
-      default: return 'bg-slate-500/10 text-slate-400 border-slate-500/20';
+  const getMethodIcon = (method) => {
+    switch (method) {
+      case 'cash': return <Wallet className="w-3 h-3" />;
+      case 'upi': return <Smartphone className="w-3 h-3" />;
+      case 'card': return <CreditCard className="w-3 h-3" />;
+      case 'bank_transfer': return <Building2 className="w-3 h-3" />;
+      default: return <DollarSign className="w-3 h-3" />;
     }
   };
 
@@ -34,137 +69,239 @@ export default function PaymentsPage() {
       case 'cash': return 'Cash';
       case 'upi': return 'UPI';
       case 'card': return 'Card';
-      case 'bank_transfer': return 'Bank Transfer';
+      case 'bank_transfer': return 'Bank';
       default: return method;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className="p-6 sm:p-8 max-w-7xl mx-auto space-y-10"
+    >
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Payments</h1>
-          <p className="text-slate-400 text-sm mt-1">Track revenue and payment statuses</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <div className="w-7 h-7 rounded-lg bg-[#3390ec]/10 flex items-center justify-center border border-[#3390ec]/10">
+              <TrendingUp className="w-3.5 h-3.5 text-[#3390ec]" />
+            </div>
+            <p className="text-[#3390ec] font-bold text-[10px] uppercase tracking-wider">Finance</p>
+          </div>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Payments</h1>
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
+            {loading ? 'Auditing ledger…' : `${payments.length} Transactions Logged`}
+          </p>
         </div>
         <button
           onClick={() => navigate('/payments/new')}
-          className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white px-4 py-2 rounded-xl font-medium transition-colors w-full sm:w-auto justify-center"
+          className="group flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3390ec] hover:bg-[#2b5278] text-white font-bold text-sm transition-all shadow-lg shadow-[#3390ec]/10 active:scale-95"
         >
-          <Plus className="w-5 h-5" />
+          <DollarSign className="w-4.5 h-4.5" />
           <span>Record Payment</span>
         </button>
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-4 flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+      <div className="space-y-6">
+        <div className="relative group max-w-2xl">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-[#3390ec] transition-colors" />
           <input
             type="text"
-            placeholder="Search by member or plan..."
+            placeholder="Search by name or plan…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full bg-slate-900/50 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-white placeholder-slate-400 focus:outline-none focus:border-emerald-500 transition-colors"
+            className="w-full pl-11 pr-4 py-3 rounded-xl bg-white/[0.03] border border-white/5 text-white placeholder-slate-500 text-sm font-medium focus:outline-none focus:border-[#3390ec]/50 focus:bg-[#3390ec]/[0.02] transition-all"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
-          {['all', 'paid', 'pending', 'overdue'].map((status) => (
-            <button
-              key={status}
-              onClick={() => setStatusFilter(status)}
-              className={`px-4 py-2.5 min-h-[44px] flex items-center justify-center rounded-xl text-sm font-medium whitespace-nowrap transition-colors capitalize ${
-                statusFilter === status
-                  ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                  : 'bg-slate-900/50 text-slate-400 border border-slate-700 hover:border-slate-600'
-              }`}
-            >
-              {status === 'all' ? 'All Payments' : status}
-            </button>
-          ))}
+
+        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
+          {['all', 'paid', 'pending', 'overdue'].map((status) => {
+            const isActive = statusFilter === status
+            return (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`flex items-center gap-2.5 px-4 py-2 rounded-lg text-[11px] font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
+                  isActive
+                    ? 'bg-[#3390ec] text-white shadow-lg shadow-[#3390ec]/10'
+                    : 'bg-white/[0.02] border border-white/5 text-slate-500 hover:text-slate-200 hover:bg-white/5'
+                }`}
+              >
+                {status === 'all' ? 'All Ledger' : status}
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* Content */}
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <div className="w-8 h-8 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin"></div>
+        <div className="space-y-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-16 bg-white/[0.03] border border-white/5 rounded-xl animate-pulse" />
+          ))}
         </div>
       ) : error ? (
-        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-6 text-center">
-          <p className="text-red-400">{error}</p>
+        <div className="glass-card border border-rose-500/10 rounded-xl p-10 text-center relative overflow-hidden">
+          <div className="relative w-12 h-12 bg-rose-500/10 rounded-xl flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-rose-400" />
+          </div>
+          <p className="text-rose-400 text-sm font-bold mb-4">{error}</p>
           <button 
             onClick={fetchPayments}
-            className="mt-4 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-white rounded-xl transition-colors"
+            className="px-6 py-2.5 bg-white/[0.05] hover:bg-white/[0.1] text-white rounded-xl text-xs font-bold transition-all border border-white/5"
           >
             Try Again
           </button>
         </div>
       ) : filteredPayments.length === 0 ? (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-12 text-center">
-          <div className="w-16 h-16 bg-slate-900/50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Receipt className="w-8 h-8 text-slate-400" />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="glass-card border border-white/5 rounded-xl p-20 text-center relative overflow-hidden"
+        >
+          <div className="relative w-16 h-16 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Receipt className="w-8 h-8 text-slate-600" />
           </div>
-          <h3 className="text-xl font-bold text-white mb-2">No payments found</h3>
-          <p className="text-slate-400 max-w-sm mx-auto mb-6">
+          <h3 className="text-xl font-bold text-white mb-1 tracking-tight">No match found</h3>
+          <p className="text-slate-500 text-xs max-w-sm mx-auto mb-6 font-medium leading-relaxed">
             {searchTerm || statusFilter !== 'all' 
-              ? "Try adjusting your search or filters to find what you're looking for."
-              : "Record your first payment to start tracking revenue."}
+              ? "We couldn't find any transactions matching your filters."
+              : "The ledger is empty. Start by recording a payment."}
           </p>
           {(searchTerm || statusFilter !== 'all') && (
             <button
               onClick={() => { setSearchTerm(''); setStatusFilter('all'); }}
-              className="text-emerald-500 hover:text-emerald-400 font-medium"
+              className="text-[#3390ec] hover:text-[#2b5278] font-bold text-[10px] uppercase tracking-wider transition-colors flex items-center justify-center gap-2 mx-auto"
             >
-              Clear all filters
+              Reset Filters
+              <ArrowRight className="w-3.5 h-3.5" />
             </button>
           )}
-        </div>
+        </motion.div>
       ) : (
-        <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl overflow-hidden">
-          <div className="overflow-x-auto">
+        <div className="space-y-6">
+          {/* Desktop Table */}
+          <div className="hidden lg:block overflow-hidden rounded-xl border border-white/5 glass-card">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="border-b border-slate-700 bg-slate-900/50 text-slate-400 text-sm">
-                  <th className="p-4 font-medium whitespace-nowrap">Member</th>
-                  <th className="p-4 font-medium whitespace-nowrap">Plan</th>
-                  <th className="p-4 font-medium whitespace-nowrap">Amount</th>
-                  <th className="p-4 font-medium whitespace-nowrap">Date</th>
-                  <th className="p-4 font-medium whitespace-nowrap">Method</th>
-                  <th className="p-4 font-medium whitespace-nowrap">Status</th>
+                <tr className="border-b border-white/5 bg-white/[0.02]">
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Athlete</th>
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Subscription</th>
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Amount</th>
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Date</th>
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Method</th>
+                  <th className="px-6 py-4 text-slate-500 font-bold uppercase tracking-wider text-[10px]">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-700/50">
+              <motion.tbody 
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+                className="divide-y divide-white/[0.02]"
+              >
                 {filteredPayments.map((payment) => (
-                  <tr key={payment.id} className="hover:bg-slate-700/20 transition-colors">
-                    <td className="p-4">
-                      <div className="text-white font-medium">{payment.members?.full_name}</div>
-                      <div className="text-slate-400 text-sm">{payment.members?.phone_number}</div>
+                  <motion.tr 
+                    variants={itemVariants}
+                    key={payment.id} 
+                    className="group hover:bg-white/[0.03] transition-colors duration-200"
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center text-white text-[13px] font-bold uppercase shadow-sm">
+                          {payment.members?.full_name?.slice(0, 1) || '?'}
+                        </div>
+                        <div>
+                          <p className="text-white font-bold text-[14px] group-hover:text-[#3390ec] transition-colors">{payment.members?.full_name || 'Unknown Member'}</p>
+                          <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mt-0.5">{payment.members?.phone_number || 'No Phone'}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="p-4 text-slate-300">
-                      {payment.subscriptions?.plan_name || 'No Plan'}
+                    <td className="px-6 py-4">
+                      <p className="text-slate-300 font-bold text-[12px]">{payment.subscriptions?.plan_name || 'One-time Entry'}</p>
                     </td>
-                    <td className="p-4">
-                      <span className="text-emerald-400 font-bold">₹{payment.amount_paid}</span>
+                    <td className="px-6 py-4">
+                      <span className="text-emerald-400 font-bold text-[13px]">₹{payment.amount_paid}</span>
                     </td>
-                    <td className="p-4 text-slate-300">
-                      {new Date(payment.payment_date).toLocaleDateString()}
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 text-slate-400 text-[12px] font-bold">
+                        <Calendar className="w-3.5 h-3.5 text-slate-500" />
+                        {new Date(payment.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+                      </div>
                     </td>
-                    <td className="p-4 text-slate-300">
-                      {getMethodText(payment.payment_method)}
+                    <td className="px-6 py-4">
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.03] border border-white/5 text-slate-400 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                        {getMethodIcon(payment.payment_method)}
+                        {getMethodText(payment.payment_method)}
+                      </div>
                     </td>
-                    <td className="p-4">
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-medium border capitalize ${getStatusColor(payment.payment_status)}`}>
-                        {payment.payment_status}
-                      </span>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={payment.payment_status} />
                     </td>
-                  </tr>
+                  </motion.tr>
                 ))}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
+
+          {/* Mobile Cards */}
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="lg:hidden space-y-3"
+          >
+            {filteredPayments.map((payment) => (
+              <motion.div 
+                variants={itemVariants}
+                key={payment.id} 
+                className="bg-white/[0.03] border border-white/5 rounded-xl p-5 active:scale-[0.98] transition-all relative overflow-hidden glass-card"
+              >
+                <div className="flex items-start justify-between gap-4 mb-4 relative z-10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-slate-800 border border-white/5 flex items-center justify-center text-white text-[14px] font-bold shadow-sm">
+                      {payment.members?.full_name?.slice(0, 1) || '?'}
+                    </div>
+                    <div>
+                      <p className="text-white font-bold text-sm tracking-tight">{payment.members?.full_name || 'Unknown'}</p>
+                      <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider mt-0.5">
+                        {payment.subscriptions?.plan_name || 'One-time'}
+                      </p>
+                    </div>
+                  </div>
+                  <StatusBadge status={payment.payment_status} />
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/5 relative z-10">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-3 h-3 text-slate-500" />
+                      <p className="text-slate-400 text-[11px] font-bold">
+                        {new Date(payment.payment_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-slate-500">{getMethodIcon(payment.payment_method)}</span>
+                      <p className="text-slate-500 text-[10px] font-bold uppercase tracking-wider">
+                        {getMethodText(payment.payment_method)}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="text-slate-500 text-[9px] font-bold uppercase tracking-wider mb-0.5">Paid</p>
+                    <p className="text-lg font-bold text-emerald-400 tracking-tight">₹{payment.amount_paid}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
+

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
+import Logo from '../components/UI/Logo'
 
 export default function ResetPasswordPage() {
   const { updatePassword, user } = useAuth()
@@ -53,11 +54,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-slate-900 flex flex-col justify-center items-center px-5 py-10">
       <div className="w-full max-w-sm glass-panel p-8 rounded-2xl shadow-2xl">
         <div className="flex items-center gap-3 mb-8 justify-center">
-          <div className="w-8 h-8 rounded-xl bg-sky-500 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-4.5 h-4.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-            </svg>
-          </div>
+          <Logo className="w-8 h-8 drop-shadow-[0_0_8px_rgba(134,59,255,0.3)]" />
           <span className="font-bold text-white tracking-tight">Gym Revenue OS</span>
         </div>
 

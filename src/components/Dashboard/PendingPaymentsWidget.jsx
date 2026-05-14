@@ -1,41 +1,71 @@
 import { Link } from 'react-router-dom';
+import { AlertCircle, ArrowUpRight, DollarSign, Wallet } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export default function PendingPaymentsWidget({ payments }) {
   if (!payments || payments.length === 0) {
     return (
-      <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5">
-        <h3 className="text-white font-semibold mb-4">Pending Payments</h3>
-        <p className="text-slate-500 text-sm">All payments are up to date.</p>
+      <div className="glass-card rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group">
+        <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-[#EF4444]"></div>
+        <h3 className="text-[#F8FAFC] font-extrabold text-lg mb-4 flex items-center gap-3 relative z-10">
+          <div className="w-10 h-10 rounded-2xl bg-[#EF4444]/10 flex items-center justify-center border border-[#EF4444]/20 shadow-inner">
+            <Wallet className="w-5 h-5 text-[#EF4444]" />
+          </div>
+          Pending Payments
+        </h3>
+        <div className="flex-1 flex items-center justify-center relative z-10">
+          <p className="text-[#64748B] text-xs font-semibold uppercase tracking-widest text-center">All payments cleared</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-white font-semibold flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-rose-400" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-          </svg>
-          Pending & Overdue
+    <div className="glass-card rounded-3xl p-6 h-full flex flex-col relative overflow-hidden group">
+      <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full blur-3xl opacity-0 group-hover:opacity-10 transition-opacity duration-500 bg-[#EF4444]"></div>
+      
+      <div className="flex items-center justify-between mb-6 relative z-10">
+        <h3 className="text-[#F8FAFC] font-extrabold text-lg flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-[#EF4444]/10 flex items-center justify-center border border-[#EF4444]/20 shadow-inner">
+            <AlertCircle className="w-5 h-5 text-[#EF4444]" />
+          </div>
+          Action Needed
         </h3>
-        <Link to="/payments" className="text-xs font-medium text-sky-400 hover:text-sky-300">View All</Link>
+        <Link to="/payments" className="p-2 bg-white/5 border border-white/10 rounded-xl text-[#94A3B8] hover:text-[#F8FAFC] hover:bg-white/10 transition-all active:scale-95 shadow-sm">
+          <ArrowUpRight className="w-4 h-4" />
+        </Link>
       </div>
       
-      <div className="space-y-3">
-        {payments.map(payment => (
-          <div key={payment.id} className="flex items-center justify-between p-3 bg-slate-800/60 rounded-xl border border-slate-700/50">
-            <div>
-              <p className="text-sm font-medium text-white">{payment.members?.full_name || 'Unknown'}</p>
-              <p className="text-xs text-rose-400 mt-0.5">{payment.payment_status === 'overdue' ? 'Overdue' : 'Pending'}</p>
+      <div className="space-y-3 relative z-10">
+        {payments.map((payment, i) => (
+          <motion.div 
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: i * 0.1 }}
+            key={payment.id} 
+            className="group/item flex items-center justify-between p-3.5 bg-white/[0.02] hover:bg-white/[0.06] rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-full bg-[#1E293B] flex items-center justify-center border border-white/10 shadow-sm group-hover/item:border-[#EF4444]/30 transition-colors">
+                <DollarSign className="w-4 h-4 text-[#94A3B8] group-hover/item:text-[#EF4444] transition-colors" />
+              </div>
+              <div>
+                <p className="text-[13px] font-bold text-[#F8FAFC] group-hover/item:text-[#EF4444] transition-colors">{payment.members?.full_name || 'Unknown'}</p>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${payment.payment_status === 'overdue' ? 'text-[#EF4444]' : 'text-[#F59E0B]'}`}>
+                  {payment.payment_status === 'overdue' ? 'Overdue' : 'Awaiting'}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <p className="text-sm font-bold text-white">₹{payment.amount_paid}</p>
-              <Link to="/payments" className="text-[10px] text-sky-400 hover:text-sky-300">Settle &rarr;</Link>
+            <div className="text-right flex flex-col items-end justify-center">
+              <p className="text-[14px] font-extrabold text-[#F8FAFC] mb-1.5 tracking-tight">₹{payment.amount_paid.toLocaleString()}</p>
+              <Link to="/payments" className="text-[10px] font-bold text-[#3B82F6] hover:text-[#60A5FA] uppercase tracking-widest transition-colors">
+                Settle
+              </Link>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>
   );
 }
+

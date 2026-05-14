@@ -1,14 +1,40 @@
 import { useState } from 'react';
+import { 
+  Settings as SettingsIcon, 
+  User, 
+  ShieldCheck, 
+  Download, 
+  Trash2, 
+  LogOut, 
+  CheckCircle2, 
+  Mail, 
+  Fingerprint,
+  Calendar,
+  Zap,
+  ArrowRight,
+  Eye,
+  EyeOff,
+  AlertTriangle,
+  ArrowLeft
+} from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
 
 /* ── Section wrapper ── */
-function Section({ title, description, children }) {
+function Section({ icon, title, description, children }) {
   return (
-    <div className="bg-slate-800/40 border border-slate-700/50 rounded-2xl p-5 sm:p-6">
-      <h3 className="text-white font-semibold text-lg mb-1">{title}</h3>
-      {description && <p className="text-slate-400 text-sm mb-5">{description}</p>}
+    <div className="bg-[#212121] border border-white/5 rounded-xl p-6 transition-all">
+      <div className="flex items-center gap-3 mb-6">
+        <div className="text-[#3390ec]">
+          {icon}
+        </div>
+        <div>
+          <h3 className="text-white font-bold text-lg">{title}</h3>
+          {description && <p className="text-gray-500 text-xs mt-0.5">{description}</p>}
+        </div>
+      </div>
       <div className="space-y-4">{children}</div>
     </div>
   );
@@ -17,11 +43,11 @@ function Section({ title, description, children }) {
 /* ── Input field ── */
 function Field({ label, id, ...props }) {
   return (
-    <div>
-      <label htmlFor={id} className="block text-sm font-medium text-slate-300 mb-1.5">{label}</label>
+    <div className="space-y-1.5">
+      <label htmlFor={id} className="text-xs font-medium text-gray-400 px-1">{label}</label>
       <input
         id={id}
-        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition-colors"
+        className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#3390ec]/50 transition-all"
         {...props}
       />
     </div>
@@ -31,27 +57,33 @@ function Field({ label, id, ...props }) {
 /* ── Toast ── */
 function Toast({ message, type, onClose }) {
   if (!message) return null;
-  const colors = type === 'success'
-    ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
-    : 'bg-rose-500/10 border-rose-500/30 text-rose-400';
   return (
-    <div className={`fixed top-6 right-6 z-50 px-5 py-3 rounded-xl border ${colors} shadow-2xl flex items-center gap-3 animate-fade-in`}>
-      <span className="text-sm font-medium">{message}</span>
-      <button onClick={onClose} className="hover:opacity-70 text-lg leading-none">&times;</button>
+    <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100] min-w-[300px] animate-in slide-in-from-top-4">
+      <div className={`flex items-center justify-between gap-4 px-4 py-3 rounded-lg shadow-xl border border-white/5 ${
+        type === 'success' ? 'bg-[#212121] text-emerald-400' : 'bg-[#212121] text-red-400'
+      }`}>
+        <div className="flex items-center gap-3">
+          {type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertTriangle className="w-5 h-5" />}
+          <span className="text-sm font-medium">{message}</span>
+        </div>
+        <button onClick={onClose} className="p-1 hover:bg-white/5 rounded transition-colors">
+          <Trash2 className="w-4 h-4 opacity-50" />
+        </button>
+      </div>
     </div>
   );
 }
 
 export default function SettingsPage() {
-  const { user, signOut, updatePassword, resetPasswordForEmail } = useAuth();
+  const { user, signOut, updatePassword } = useAuth();
   const { gym, gymName, updateGymName, ownerEmail } = useCurrentGym();
+  const navigate = useNavigate();
 
   // Gym profile state
   const [newGymName, setNewGymName] = useState(gymName || '');
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Password state
-  const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [savingPw, setSavingPw] = useState(false);
@@ -79,8 +111,6 @@ export default function SettingsPage() {
     setNewGymName(gymName || '');
   }
 
-  /* ── Handlers ── */
-
   const handleSaveProfile = async () => {
     if (!newGymName.trim()) return showToast('Gym name cannot be empty', 'error');
     if (newGymName.trim() === gymName) return showToast('No changes to save', 'error');
@@ -102,21 +132,12 @@ export default function SettingsPage() {
     setSavingPw(true);
     try {
       await updatePassword(newPw);
-      setCurrentPw(''); setNewPw(''); setConfirmPw('');
+      setNewPw(''); setConfirmPw('');
       showToast('Password updated successfully!');
     } catch (err) {
       showToast(err.message || 'Failed to change password', 'error');
     } finally {
       setSavingPw(false);
-    }
-  };
-
-  const handleSendResetEmail = async () => {
-    try {
-      await resetPasswordForEmail(user.email);
-      showToast('Password reset email sent! Check your inbox.');
-    } catch (err) {
-      showToast(err.message || 'Failed to send reset email', 'error');
     }
   };
 
@@ -182,90 +203,131 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="p-5 sm:p-7 lg:p-8 max-w-3xl mx-auto">
+    <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
 
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">Settings</h1>
-        <p className="text-slate-400 text-sm mt-1">Manage your gym profile, account security, and data.</p>
+      <div className="flex items-center gap-4 mb-8">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className="p-2 rounded-lg bg-[#212121] border border-white/5 text-gray-400 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-white">Settings</h1>
+          <p className="text-gray-500 text-sm">Manage your gym account and preferences</p>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        {/* ── 1. Gym Profile ── */}
-        <Section title="Gym Profile" description="Update your gym's display name and information.">
-          <Field label="Gym Name" id="settings-gym-name" type="text" value={newGymName} onChange={e => setNewGymName(e.target.value)} placeholder="Enter gym name" />
-          <Field label="Owner Email" id="settings-owner-email" type="email" value={ownerEmail || ''} disabled readOnly />
-          <Field label="Gym ID" id="settings-gym-id" type="text" value={gym?.id || ''} disabled readOnly />
-          <Field label="Member Since" id="settings-created-at" type="text" value={gym?.created_at ? new Date(gym.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : ''} disabled readOnly />
+      <div className="grid gap-6">
+        {/* Gym Identity */}
+        <Section 
+          icon={<Zap className="w-5 h-5" />}
+          title="Gym Identity" 
+          description="Operational parameters & branding"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="Gym Name" id="settings-gym-name" type="text" value={newGymName} onChange={e => setNewGymName(e.target.value)} placeholder="Enter gym name" />
+            <Field label="Owner Email" id="settings-owner-email" type="email" value={ownerEmail || ''} disabled readOnly />
+            <Field label="Gym ID" id="settings-gym-id" type="text" value={gym?.id || ''} disabled readOnly />
+            <Field label="Registry Date" id="settings-created-at" type="text" value={gym?.created_at ? new Date(gym.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : ''} disabled readOnly />
+          </div>
           <div className="pt-2">
-            <button id="settings-save-profile-btn" onClick={handleSaveProfile} disabled={savingProfile} className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg shadow-lg shadow-sky-500/20 transition-all">
-              {savingProfile ? 'Saving…' : 'Save Changes'}
+            <button onClick={handleSaveProfile} disabled={savingProfile} className="px-6 py-2 bg-[#3390ec] hover:bg-[#2b7ad2] disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-all">
+              {savingProfile ? 'Saving...' : 'Update Profile'}
             </button>
           </div>
         </Section>
 
-        {/* ── 2. Security ── */}
-        <Section title="Account Security" description="Update your password to keep your account secure.">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <Field label="New Password" id="settings-new-pw" type={showPasswords ? 'text' : 'password'} value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min 6 characters" autoComplete="new-password" />
-            <Field label="Confirm Password" id="settings-confirm-pw" type={showPasswords ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Re-enter password" autoComplete="new-password" />
+        {/* Security */}
+        <Section 
+          icon={<ShieldCheck className="w-5 h-5" />}
+          title="Security" 
+          description="Manage your account password"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Field label="New Password" id="settings-new-pw" type={showPasswords ? 'text' : 'password'} value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min 6 characters" />
+            <Field label="Confirm Password" id="settings-confirm-pw" type={showPasswords ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Re-enter password" />
           </div>
-          <label className="flex items-center gap-2 cursor-pointer select-none">
-            <input type="checkbox" checked={showPasswords} onChange={e => setShowPasswords(e.target.checked)} className="w-4 h-4 rounded border-slate-600 bg-slate-900 text-sky-500 focus:ring-sky-500" />
-            <span className="text-sm text-slate-400">Show passwords</span>
-          </label>
-          <div className="flex flex-wrap gap-3 pt-2">
-            <button id="settings-change-pw-btn" onClick={handleChangePassword} disabled={savingPw} className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-white text-sm font-semibold rounded-lg shadow-lg shadow-sky-500/20 transition-all">
-              {savingPw ? 'Updating…' : 'Update Password'}
+          <div className="flex items-center justify-between pt-2">
+            <button 
+              onClick={() => setShowPasswords(!showPasswords)} 
+              className="text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1.5"
+            >
+              {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+              {showPasswords ? 'Hide Password' : 'Show Password'}
             </button>
-            <button id="settings-reset-email-btn" onClick={handleSendResetEmail} className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-medium rounded-lg border border-slate-700 transition-colors">
-              Send Reset Email
+            <button onClick={handleChangePassword} disabled={savingPw} className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg text-sm transition-all border border-white/5">
+              {savingPw ? 'Updating...' : 'Change Password'}
             </button>
           </div>
         </Section>
 
-        {/* ── 3. Data & Export ── */}
-        <Section title="Data & Export" description="Download your gym's member data as a CSV file.">
+        {/* Data Control */}
+        <Section 
+          icon={<Download className="w-5 h-5" />}
+          title="Data Management" 
+          description="Export your gym's data to CSV"
+        >
+          <button onClick={handleExportCSV} disabled={exporting} className="flex items-center gap-2 px-6 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-all border border-white/5">
+            <Download className="w-4 h-4" />
+            {exporting ? 'Exporting...' : 'Export Member Data'}
+          </button>
+        </Section>
+
+        {/* Danger Zone */}
+        <div className="bg-[#212121] border border-red-500/10 rounded-xl p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="text-red-500">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-lg">Danger Zone</h3>
+              <p className="text-gray-500 text-xs mt-0.5">Irreversible actions for your gym data</p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-end gap-4">
+            <div className="flex-1 w-full space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 px-1">Type "DELETE" to confirm data wipe</label>
+              <input 
+                type="text" 
+                value={deleteConfirm} 
+                onChange={e => setDeleteConfirm(e.target.value)} 
+                placeholder='Type DELETE' 
+                className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50" 
+              />
+            </div>
+            <button 
+              onClick={handleDeleteAllMembers} 
+              disabled={deleting || deleteConfirm !== 'DELETE'} 
+              className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white disabled:opacity-20 font-medium rounded-lg text-sm transition-all border border-red-500/20"
+            >
+              {deleting ? 'Erasing...' : 'Wipe All Data'}
+            </button>
+          </div>
+        </div>
+
+        {/* Sign Out */}
+        <div className="bg-[#212121] border border-white/5 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <button id="settings-export-btn" onClick={handleExportCSV} disabled={exporting} className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-sm font-semibold rounded-lg shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
-              {exporting ? 'Exporting…' : 'Export Members CSV'}
-            </button>
-          </div>
-        </Section>
-
-        {/* ── 4. Danger Zone ── */}
-        <div className="bg-rose-500/5 border border-rose-500/20 rounded-2xl p-5 sm:p-6">
-          <h3 className="text-rose-400 font-semibold text-lg mb-1">Danger Zone</h3>
-          <p className="text-slate-400 text-sm mb-5">Irreversible and destructive actions.</p>
-          <div className="space-y-5">
-            {/* Delete all data */}
-            <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-700/50">
-              <h4 className="text-white text-sm font-semibold mb-1">Delete All Gym Data</h4>
-              <p className="text-slate-400 text-xs mb-3">This will permanently delete all members, subscriptions, payments, and notifications. This action cannot be undone.</p>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                <input id="settings-delete-confirm" type="text" value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} placeholder='Type "DELETE" to confirm' className="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 w-full sm:w-56" />
-                <button id="settings-delete-btn" onClick={handleDeleteAllMembers} disabled={deleting || deleteConfirm !== 'DELETE'} className="px-5 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-lg transition-all whitespace-nowrap">
-                  {deleting ? 'Deleting…' : 'Delete All Data'}
-                </button>
-              </div>
+            <div className="w-10 h-10 rounded-full bg-[#1c1c1c] border border-white/5 flex items-center justify-center text-gray-500">
+              <User className="w-5 h-5" />
             </div>
-
-            {/* Sign Out */}
-            <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-700/50">
-              <h4 className="text-white text-sm font-semibold mb-1">Sign Out</h4>
-              <p className="text-slate-400 text-xs mb-3">Sign out of your account on this device.</p>
-              <button id="settings-signout-btn" onClick={handleSignOut} disabled={signingOut} className="px-5 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2">
-                {signingOut ? (
-                  <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg>
-                )}
-                {signingOut ? 'Signing out…' : 'Sign Out'}
-              </button>
+            <div>
+              <h4 className="text-white font-bold">Signed in as</h4>
+              <p className="text-gray-500 text-xs">{user?.email}</p>
             </div>
           </div>
+          <button 
+            onClick={handleSignOut} 
+            disabled={signingOut}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-2.5 bg-white/5 hover:bg-red-500/10 hover:text-red-500 text-white rounded-lg text-sm font-medium transition-all border border-white/5"
+          >
+            {signingOut ? <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : <LogOut className="w-4 h-4" />}
+            {signingOut ? 'Signing out...' : 'Sign Out'}
+          </button>
         </div>
       </div>
     </div>

@@ -1,9 +1,6 @@
-/**
- * EditMemberPage.jsx
- * Route: /members/:id/edit
- */
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ArrowLeft, User, ShieldCheck, AlertCircle } from 'lucide-react'
 import { getMemberById } from '../../services/memberService'
 import { useMembers } from '../../hooks/useMembers'
 import MemberForm from './MemberForm'
@@ -36,22 +33,25 @@ export default function EditMemberPage() {
 
   if (loadingMember) {
     return (
-      <div className="p-8 flex items-center justify-center min-h-64">
-        <div className="w-7 h-7 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
+      <div className="p-12 flex items-center justify-center min-h-[400px]">
+        <div className="w-10 h-10 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin" />
       </div>
     )
   }
 
   if (fetchError || !member) {
     return (
-      <div className="p-8 text-center">
-        <p className="text-white font-semibold mb-2">Member not found</p>
-        <p className="text-slate-400 text-sm mb-4">{fetchError}</p>
+      <div className="p-12 text-center max-w-md mx-auto">
+        <div className="w-20 h-20 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 shadow-2xl">
+          <AlertCircle className="w-10 h-10 text-rose-400" />
+        </div>
+        <h3 className="text-2xl font-black text-white mb-3 tracking-tight">Access Error</h3>
+        <p className="text-slate-500 mb-8 font-medium leading-relaxed">{fetchError || "Athlete profile not found in our encrypted records."}</p>
         <button
           onClick={() => navigate('/members')}
-          className="px-4 py-2 rounded-lg bg-sky-500 hover:bg-sky-400 text-white text-sm font-semibold transition-colors"
+          className="w-full py-4 rounded-2xl bg-white/[0.03] hover:bg-white/[0.08] text-white text-xs font-black uppercase tracking-widest transition-all border border-white/5 shadow-xl"
         >
-          Back to Members
+          Return to Ledger
         </button>
       </div>
     )
@@ -69,35 +69,41 @@ export default function EditMemberPage() {
   }
 
   return (
-    <div className="p-5 sm:p-7 lg:p-8 max-w-2xl mx-auto">
+    <div className="p-6 sm:p-10 lg:p-12 max-w-3xl mx-auto space-y-10">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
+      <div className="flex items-center gap-6">
         <button
           onClick={() => navigate('/members')}
-          className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+          className="group w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/5 flex items-center justify-center text-slate-500 hover:text-white hover:bg-white/[0.08] transition-all duration-300 hover:scale-110 active:scale-95 shadow-xl"
           aria-label="Back to members"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
+          <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-bold text-white truncate">Edit — {member.full_name}</h1>
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-1">
+            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <p className="text-emerald-400 font-black text-[10px] uppercase tracking-[0.2em]">Profile Modification</p>
+          </div>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black text-white tracking-tighter truncate max-w-[200px] sm:max-w-none">
+              {member.full_name}
+            </h1>
             <StatusBadge status={member.status} />
           </div>
-          <p className="text-slate-400 text-sm mt-0.5">Update member details</p>
         </div>
       </div>
 
       {/* Form card */}
-      <div className="bg-slate-800/50 border border-slate-700/50 rounded-2xl p-6">
-        <MemberForm
-          mode="edit"
-          initialValues={initialValues}
-          onSubmit={handleSubmit}
-          onCancel={() => navigate('/members')}
-        />
+      <div className="glass-card border border-white/5 rounded-[2.5rem] p-8 sm:p-12 relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 blur-[100px] rounded-full -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10">
+          <MemberForm
+            mode="edit"
+            initialValues={initialValues}
+            onSubmit={handleSubmit}
+            onCancel={() => navigate('/members')}
+          />
+        </div>
       </div>
     </div>
   )
