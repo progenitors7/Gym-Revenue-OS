@@ -11,16 +11,6 @@ const Logo = ({ className = "w-9 h-9", ...props }) => {
       className={className}
       {...props}
     >
-      <path 
-        fill="#863bff" 
-        d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" 
-      />
-      <mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style={{ maskType: 'alpha' }}>
-        <path 
-          fill="#000" 
-          d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" 
-        />
-      </mask>
       <g mask="url(#a)">
         <g filter="url(#b)">
           <ellipse cx="5.508" cy="14.704" fill="#ede6ff" rx="5.508" ry="14.704" transform="matrix(.00324 1 1 -.00324 -4.47 31.516)"/>
@@ -59,11 +49,21 @@ const Logo = ({ className = "w-9 h-9", ...props }) => {
           <ellipse cx="38.418" cy="32.4" fill="#47bfff" rx="5.971" ry="15.297" transform="rotate(37.892 38.418 32.4)"/>
         </g>
       </g>
+      <path 
+        fill="#a770ff" 
+        d="M25.946 44.938c-.664.845-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.287c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.497 0-3.578-1.842-3.578H1.237c-.92 0-1.456-1.04-.92-1.788L10.013.474c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.579 1.842 3.579h11.377c.943 0 1.473 1.088.89 1.83L25.947 44.94z" 
+      />
       <defs>
+        <mask id="a" width="48" height="46" x="0" y="0" maskUnits="userSpaceOnUse" style={{ maskType: 'alpha' }}>
+          <path 
+            fill="#000" 
+            d="M25.842 44.938c-.664.844-2.021.375-2.021-.698V33.937a2.26 2.26 0 0 0-2.262-2.262H10.183c-.92 0-1.456-1.04-.92-1.788l7.48-10.471c1.07-1.498 0-3.579-1.842-3.579H1.133c-.92 0-1.456-1.04-.92-1.787L9.91.473c.214-.297.556-.474.92-.474h28.894c.92 0 1.456 1.04.92 1.788l-7.48 10.471c-1.07 1.498 0 3.578 1.842 3.578h11.377c.943 0 1.473 1.088.89 1.832L25.843 44.94z" 
+          />
+        </mask>
         <filter id="b" width="60.045" height="41.654" x="-19.77" y="16.149" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
           <feFlood floodOpacity="0" result="BackgroundImageFix"/>
           <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-          <feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="7.659"/>
+          <feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="3.5"/>
         </filter>
         <filter id="c" width="90.34" height="51.437" x="-54.613" y="-7.533" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
           <feFlood floodOpacity="0" result="BackgroundImageFix"/>
@@ -73,7 +73,7 @@ const Logo = ({ className = "w-9 h-9", ...props }) => {
         <filter id="d" width="79.355" height="29.4" x="-49.64" y="2.03" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
           <feFlood floodOpacity="0" result="BackgroundImageFix"/>
           <feBlend in="SourceGraphic" in2="BackgroundImageFix" result="shape"/>
-          <feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="4.596"/>
+          <feGaussianBlur result="effect1_foregroundBlur_2002_17158" stdDeviation="2"/>
         </filter>
         <filter id="e" width="79.579" height="29.4" x="-45.045" y="20.029" colorInterpolationFilters="sRGB" filterUnits="userSpaceOnUse">
           <feFlood floodOpacity="0" result="BackgroundImageFix"/>

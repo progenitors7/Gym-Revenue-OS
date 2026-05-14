@@ -127,7 +127,7 @@ export default function AuthPage() {
               animate={{ scale: 1, opacity: 1 }}
               className="w-16 h-16 flex items-center justify-center mx-auto mb-6 lg:hidden"
             >
-              <Logo className="w-16 h-16 drop-shadow-[0_0_20px_rgba(134,59,255,0.4)]" />
+              <Logo className="w-16 h-16 drop-shadow-[0_0_8px_rgba(134,59,255,0.5)]" />
             </motion.div>
             <motion.h2 
               initial={{ opacity: 0, y: 10 }}
