@@ -8,13 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { unifiedService } from '../../services/unifiedService';
 import { useCurrentGym } from '../../hooks/useCurrentGym';
 
-const PLANS = [
-  { name: 'Monthly', duration: 30, price: 500 },
-  { name: 'Quarterly', duration: 90, price: 1400 },
-  { name: '6 Months', duration: 180, price: 2500 },
-  { name: 'Annual', duration: 365, price: 4500 },
-  { name: 'Day Pass', duration: 1, price: 50 }
-];
+import { planService } from '../../services/planService';
 
 export default function PaymentForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
@@ -31,13 +25,18 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
     notes: initialData?.notes || ''
   });
   const [shouldRenew, setShouldRenew] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(PLANS[0]);
+  const [plans, setPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
   const { gym } = useCurrentGym();
 
   useEffect(() => {
     fetchMembers();
     fetchSubscriptions();
-  }, [fetchMembers, fetchSubscriptions]);
+    
+    if (gym?.id) {
+      planService.getPlans(gym.id).then(setPlans).catch(console.error);
+    }
+  }, [fetchMembers, fetchSubscriptions, gym?.id]);
 
   // Filter subscriptions to only those belonging to the selected member
   const memberSubscriptions = subscriptions.filter(sub => sub.member_id === formData.member_id);
@@ -62,7 +61,7 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = { ...formData };
-    if (shouldRenew) {
+    if (shouldRenew && selectedPlan) {
       data.smart_renew = {
         plan_name: selectedPlan.name,
         duration_type: selectedPlan.name.toLowerCase(),
@@ -237,16 +236,16 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
                 >
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Extension Plan</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {PLANS.map((plan) => (
+                    {plans.map((plan) => (
                       <button
-                        key={plan.name}
+                        key={plan.id}
                         type="button"
                         onClick={() => {
                           setSelectedPlan(plan);
                           setFormData(f => ({ ...f, amount_paid: plan.price }));
                         }}
                         className={`p-3 rounded-xl border transition-all text-left ${
-                          selectedPlan.name === plan.name 
+                          selectedPlan?.id === plan.id 
                             ? 'bg-emerald-500/10 border-emerald-500/50' 
                             : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
                         }`}
@@ -255,6 +254,9 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
                         <p className="text-sm font-bold text-white">₹{plan.price}</p>
                       </button>
                     ))}
+                    {plans.length === 0 && (
+                      <p className="text-[10px] text-slate-500 italic col-span-full">No plans defined in Settings</p>
+                    )}
                   </div>
                 </motion.div>
               )}

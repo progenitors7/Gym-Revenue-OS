@@ -3,10 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { Calendar, User, Tag } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 import DatePicker from '../UI/DatePicker';
+import { planService } from '../../services/planService';
+import { useCurrentGym } from '../../hooks/useCurrentGym';
 
 export default function SubscriptionForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
   const { members, fetchMembers } = useMembers();
+
+  const [plans, setPlans] = useState([]);
+  const { gym } = useCurrentGym();
+
+  useEffect(() => {
+    if (gym?.id) {
+      planService.getPlans(gym.id).then(setPlans).catch(console.error);
+    }
+  }, [gym?.id]);
 
   const [formData, setFormData] = useState({
     member_id: initialData?.member_id || '',
@@ -14,7 +25,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
     duration_type: initialData?.duration_type || 'monthly',
     amount: initialData?.amount || '',
     start_date: initialData?.start_date || new Date().toISOString().split('T')[0],
-    expiry_date: initialData?.expiry_date || '', // Only shown/used if duration_type is 'custom'
+    expiry_date: initialData?.expiry_date || '', 
   });
 
   useEffect(() => {
@@ -83,9 +94,40 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
           </div>
         </div>
 
+        {/* Plan Selection (Dynamic) */}
+        <div className="space-y-3 md:col-span-2">
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Pre-defined Plans</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {plans.map(plan => (
+              <button
+                key={plan.id}
+                type="button"
+                onClick={() => {
+                  setFormData(prev => ({
+                    ...prev,
+                    plan_name: plan.name,
+                    amount: plan.price,
+                    duration_type: 'custom', // We will set expiry manually based on days
+                  }));
+                  // Calculate expiry right away
+                  const date = new Date(formData.start_date);
+                  date.setDate(date.getDate() + plan.duration_days);
+                  setFormData(prev => ({ ...prev, expiry_date: date.toISOString().split('T')[0] }));
+                }}
+                className={`p-3 rounded-xl border text-left transition-all ${
+                  formData.plan_name === plan.name ? 'bg-emerald-500/10 border-emerald-500/50' : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
+                }`}
+              >
+                <p className="text-[10px] font-black uppercase text-slate-400">{plan.name}</p>
+                <p className="text-xs font-bold text-white">₹{plan.price}</p>
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Plan Name */}
         <div className="space-y-3">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Subscription Plan</label>
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Plan Display Name</label>
           <div className="relative group">
             <Tag className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
             <input
@@ -134,7 +176,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
               <option value="monthly">Monthly Cycle (+30 Days)</option>
               <option value="quarterly">Quarterly Cycle (+90 Days)</option>
               <option value="yearly">Annual Cycle (+365 Days)</option>
-              <option value="custom">Custom Term</option>
+              <option value="custom">Custom Term / Manual</option>
             </select>
           </div>
         </div>

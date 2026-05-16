@@ -21,6 +21,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
+import { planService } from '../services/planService';
+import { Plus, X as CloseIcon } from 'lucide-react';
 
 /* ── Section wrapper ── */
 function Section({ icon, title, description, children }) {
@@ -97,6 +99,12 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
 
+  // Membership Plans state
+  const [plans, setPlans] = useState([]);
+  const [loadingPlans, setLoadingPlans] = useState(false);
+  const [showAddPlan, setShowAddPlan] = useState(false);
+  const [newPlan, setNewPlan] = useState({ name: '', duration_days: 30, price: 0 });
+
   // Toast
   const [toast, setToast] = useState({ message: '', type: 'success' });
   const showToast = (message, type = 'success') => {
@@ -110,6 +118,51 @@ export default function SettingsPage() {
     setPrevName(gymName);
     setNewGymName(gymName || '');
   }
+
+  // Load plans
+  const fetchPlans = async () => {
+    if (!gym?.id) return;
+    setLoadingPlans(true);
+    try {
+      const data = await planService.getPlans(gym.id);
+      setPlans(data);
+    } catch (err) {
+      console.error('Failed to fetch plans:', err);
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  useState(() => {
+    fetchPlans();
+  }, [gym?.id]);
+
+  const handleAddPlan = async () => {
+    if (!newPlan.name || !newPlan.duration_days) return showToast('Please fill all fields', 'error');
+    setLoadingPlans(true);
+    try {
+      await planService.createPlan(gym.id, newPlan);
+      showToast('Plan added successfully!');
+      setNewPlan({ name: '', duration_days: 30, price: 0 });
+      setShowAddPlan(false);
+      fetchPlans();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      setLoadingPlans(false);
+    }
+  };
+
+  const handleDeletePlan = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this plan?')) return;
+    try {
+      await planService.deletePlan(id);
+      showToast('Plan deleted successfully!');
+      fetchPlans();
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
+  };
 
   const handleSaveProfile = async () => {
     if (!newGymName.trim()) return showToast('Gym name cannot be empty', 'error');
@@ -237,6 +290,74 @@ export default function SettingsPage() {
             <button onClick={handleSaveProfile} disabled={savingProfile} className="px-6 py-2 bg-[#3390ec] hover:bg-[#2b7ad2] disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-all">
               {savingProfile ? 'Saving...' : 'Update Profile'}
             </button>
+          </div>
+        </Section>
+
+        {/* Membership Plans */}
+        <Section 
+          icon={<Calendar className="w-5 h-5" />}
+          title="Membership Plans" 
+          description="Define your own subscription tiers and pricing"
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {plans.map(plan => (
+                <div key={plan.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between group">
+                  <div>
+                    <p className="text-sm font-bold text-white">{plan.name}</p>
+                    <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">
+                      {plan.duration_days} Days • ₹{plan.price}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => handleDeletePlan(plan.id)}
+                    className="p-2 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              ))}
+              
+              {!showAddPlan ? (
+                <button 
+                  onClick={() => setShowAddPlan(true)}
+                  className="p-4 rounded-xl border border-dashed border-white/10 hover:border-[#3390ec]/50 hover:bg-[#3390ec]/5 text-gray-500 hover:text-[#3390ec] transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-xs font-bold uppercase tracking-widest">Add New Plan</span>
+                </button>
+              ) : (
+                <div className="p-4 rounded-xl bg-white/[0.05] border border-[#3390ec]/30 space-y-3">
+                  <input 
+                    type="text" 
+                    placeholder="Plan Name (e.g. Monthly Gold)" 
+                    className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
+                    value={newPlan.name}
+                    onChange={e => setNewPlan({...newPlan, name: e.target.value})}
+                  />
+                  <div className="flex gap-2">
+                    <input 
+                      type="number" 
+                      placeholder="Days" 
+                      className="w-1/2 bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
+                      value={newPlan.duration_days}
+                      onChange={e => setNewPlan({...newPlan, duration_days: parseInt(e.target.value)})}
+                    />
+                    <input 
+                      type="number" 
+                      placeholder="Price" 
+                      className="w-1/2 bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
+                      value={newPlan.price}
+                      onChange={e => setNewPlan({...newPlan, price: parseFloat(e.target.value)})}
+                    />
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button onClick={handleAddPlan} className="flex-1 py-1.5 bg-[#3390ec] text-white text-[10px] font-black uppercase tracking-wider rounded-lg">Save</button>
+                    <button onClick={() => setShowAddPlan(false)} className="px-3 py-1.5 bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-wider rounded-lg">Cancel</button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </Section>
 

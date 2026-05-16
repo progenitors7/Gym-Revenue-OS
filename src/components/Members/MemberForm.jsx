@@ -13,7 +13,7 @@ import DatePicker from '../UI/DatePicker'
 import { unifiedService } from '../../services/unifiedService'
 import { useCurrentGym } from '../../hooks/useCurrentGym'
 
-const PLANS = ['Monthly', 'Quarterly', '6 Months', 'Annual', 'Day Pass', 'Custom']
+import { planService } from '../../services/planService';
 
 const DEFAULTS = {
   full_name: '',
@@ -48,32 +48,37 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
   const [submitting, setSubmitting] = useState(false)
   const [recordPayment, setRecordPayment] = useState(mode === 'add')
   const [amountPaid, setAmountPaid] = useState('')
+  const [plans, setPlans] = useState([])
   const { gym } = useCurrentGym()
+
+  useEffect(() => {
+    if (gym?.id) {
+      planService.getPlans(gym.id).then(setPlans).catch(console.error)
+    }
+  }, [gym?.id])
 
   // Auto-calculate expiry date based on plan
   useEffect(() => {
-    if (!form.join_date || !form.membership_plan || form.membership_plan === 'Custom') return
+    if (!form.join_date || !form.membership_plan) return
 
-    const calculateExpiry = (startDate, plan) => {
-      const date = new Date(startDate)
-      if (isNaN(date.getTime())) return null
+    const selectedPlanObj = plans.find(p => p.name === form.membership_plan)
+    if (!selectedPlanObj) return
 
-      switch (plan) {
-        case 'Monthly': date.setDate(date.getDate() + 30); break
-        case 'Quarterly': date.setDate(date.getDate() + 90); break
-        case '6 Months': date.setDate(date.getDate() + 180); break
-        case 'Annual': date.setDate(date.getDate() + 365); break
-        case 'Day Pass': date.setDate(date.getDate() + 1); break
-        default: return null
-      }
-      return date.toISOString().split('T')[0]
-    }
+    const date = new Date(form.join_date)
+    if (isNaN(date.getTime())) return
 
-    const newExpiry = calculateExpiry(form.join_date, form.membership_plan)
-    if (newExpiry && newExpiry !== form.expiry_date) {
+    date.setDate(date.getDate() + selectedPlanObj.duration_days)
+    const newExpiry = date.toISOString().split('T')[0]
+    
+    if (newExpiry !== form.expiry_date) {
       setForm(f => ({ ...f, expiry_date: newExpiry }))
     }
-  }, [form.join_date, form.membership_plan])
+
+    // Also auto-fill amount if recording payment
+    if (recordPayment && !amountPaid) {
+      setAmountPaid(selectedPlanObj.price.toString())
+    }
+  }, [form.join_date, form.membership_plan, plans])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
@@ -115,7 +120,8 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
               plan_name: form.membership_plan,
               duration_type: form.membership_plan.toLowerCase(),
               amount: parseFloat(amountPaid),
-              expiry_date: form.expiry_date
+              expiry_date: form.expiry_date,
+              gym_id: gym.id
             },
             {
               amount_paid: parseFloat(amountPaid),
@@ -187,7 +193,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
           <Award className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 group-focus-within:text-emerald-400 transition-colors" />
           <select id="member-plan" value={form.membership_plan} onChange={set('membership_plan')} className={inputCls}>
             <option value="">Select plan</option>
-            {PLANS.map((p) => <option key={p} value={p}>{p}</option>)}
+            {plans.map((p) => <option key={p.id} value={p.name}>{p.name} (₹{p.price})</option>)}
           </select>
         </Field>
       </div>
