@@ -13,11 +13,25 @@ export const subscriptionService = {
       .select(`
         *,
         members (
+          id,
           full_name,
-          phone_number
+          phone_number,
+          join_date
         )
       `)
       .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Get all subscriptions for a specific member (full plan history)
+  async getSubscriptionsByMember(memberId) {
+    const { data, error } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('member_id', memberId)
+      .order('start_date', { ascending: false });
 
     if (error) throw error;
     return data;
