@@ -144,7 +144,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
 
         {/* Amount */}
         <div className="space-y-3">
-          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Investment (₹)</label>
+          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">Amount Paid (₹)</label>
           <div className="relative group">
             <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-500 font-black text-xs group-focus-within:text-emerald-400 transition-colors">₹</div>
             <input
@@ -155,7 +155,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
               step="0.01"
               value={formData.amount}
               onChange={handleChange}
-              placeholder="0.00"
+              placeholder="0"
               className="w-full bg-white/[0.03] border border-white/5 rounded-2xl pl-12 pr-4 py-4 text-white placeholder-slate-600 text-sm font-medium focus:outline-none focus:bg-white/[0.05] focus:border-emerald-500/50 transition-all"
             />
           </div>

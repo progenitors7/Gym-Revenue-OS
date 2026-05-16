@@ -90,7 +90,7 @@ export default function PaymentsPage() {
             </div>
             <p className="text-[#3390ec] font-bold text-[10px] uppercase tracking-wider">Finance</p>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Payments</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Revenue History</h1>
           <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
             {loading ? 'Auditing ledger…' : `${payments.length} Transactions Logged`}
           </p>
@@ -100,7 +100,7 @@ export default function PaymentsPage() {
           className="group flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-[#3390ec] hover:bg-[#2b5278] text-white font-bold text-sm transition-all shadow-lg shadow-[#3390ec]/10 active:scale-95"
         >
           <DollarSign className="w-4.5 h-4.5" />
-          <span>Record Payment</span>
+          <span>Manual Entry</span>
         </button>
       </div>
 

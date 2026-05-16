@@ -70,7 +70,7 @@ export default function SubscriptionsPage() {
             </div>
             <p className="text-[#3390ec] font-bold text-[10px] uppercase tracking-wider">Access Control</p>
           </div>
-          <h1 className="text-3xl font-bold text-white tracking-tight">Subscriptions</h1>
+          <h1 className="text-3xl font-bold text-white tracking-tight">Active Plans</h1>
           <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
             {loading ? 'Verifying plans…' : `${subscriptions.length} active plans tracking`}
           </p>

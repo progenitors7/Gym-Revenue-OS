@@ -38,6 +38,14 @@ export const unifiedService = {
         });
       }
 
+      // 3. Force Update Member (Safety Sync)
+      // Although DB triggers exist, we force a sync here to ensure UI is immediate.
+      await updateMember(memberId, {
+        expiry_date: planData.expiry_date,
+        membership_plan: planData.plan_name,
+        status: 'active' // Immediately mark as active
+      });
+
       return { success: true, subscription };
     } catch (error) {
       console.error('Error in smartRenew:', error);

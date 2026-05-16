@@ -35,7 +35,7 @@ const NAV_ITEMS = [
     icon: LayoutDashboard,
   },
   {
-    label: 'Members',
+    label: 'Athletes',
     path: '/members',
     icon: Users,
   },
@@ -45,7 +45,7 @@ const NAV_ITEMS = [
     icon: CalendarRange,
   },
   {
-    label: 'Payments',
+    label: 'Revenue History',
     path: '/payments',
     icon: CreditCard,
   },
