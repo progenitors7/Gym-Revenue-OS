@@ -192,7 +192,8 @@ export default function SubscriptionsPage() {
             <motion.div 
               variants={itemVariants}
               key={sub.id} 
-              className="glass-card bg-white/[0.02] border border-white/5 rounded-xl p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group"
+              onClick={() => navigate(`/members/${sub.member_id || sub.members?.id}/edit`)}
+              className="glass-card bg-white/[0.02] border border-white/5 rounded-xl p-5 hover:bg-white/[0.04] hover:border-white/10 transition-all duration-300 group cursor-pointer"
             >
               <div className="flex justify-between items-start mb-6">
                 <div className="flex items-center gap-3">

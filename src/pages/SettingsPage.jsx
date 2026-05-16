@@ -22,7 +22,14 @@ import { useAuth } from '../hooks/useAuth';
 import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
 import { planService } from '../services/planService';
+// ... imports
 import { Plus, X as CloseIcon } from 'lucide-react';
+
+const WA_PRESETS = [
+  { label: 'Professional Reminder', text: 'Hello {{name}}, this is a friendly reminder that your {{plan}} plan expires on {{date}}. Please renew to avoid interruption.' },
+  { label: 'Urgent Expiry', text: 'URGENT: {{name}}, your gym plan has expired on {{date}}. Please contact the front desk immediately.' },
+  { label: 'Friendly Greeting', text: 'Hey {{name}}! Hope you are crushing your workouts. Your current plan expires on {{date}}.' }
+];
 
 /* ── Section wrapper ── */
 function Section({ icon, title, description, children }) {
@@ -77,7 +84,7 @@ function Toast({ message, type, onClose }) {
 }
 
 export default function SettingsPage() {
-  const { user, signOut, updatePassword } = useAuth();
+  const { user, signIn, signOut, updatePassword, resetPasswordForEmail } = useAuth();
   const { gym, gymName, updateGymName, ownerEmail } = useCurrentGym();
   const navigate = useNavigate();
 
@@ -86,10 +93,14 @@ export default function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
 
   // Password state
+  const [currentPw, setCurrentPw] = useState('');
   const [newPw, setNewPw] = useState('');
   const [confirmPw, setConfirmPw] = useState('');
   const [savingPw, setSavingPw] = useState(false);
   const [showPasswords, setShowPasswords] = useState(false);
+
+  // Danger zone modal state
+  const [showDangerModal, setShowDangerModal] = useState(false);
 
   // Export state
   const [exporting, setExporting] = useState(false);
@@ -105,11 +116,17 @@ export default function SettingsPage() {
   const [showAddPlan, setShowAddPlan] = useState(false);
   const [newPlan, setNewPlan] = useState({ name: '', duration_days: 30, price: 0 });
 
-  // Toast
-  const [toast, setToast] = useState({ message: '', type: 'success' });
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: '', type: 'success' }), 4000);
+  };
+
+  const getObfuscatedEmail = (email) => {
+    if (!email) return '';
+    const [local, domain] = email.split('@');
+    if (!local || !domain) return email;
+    if (local.length <= 2) return `${local[0]}***@${domain}`;
+    return `${local[0]}***${local[local.length - 1]}@${domain}`;
   };
 
   // Update gymName field when prop changes
@@ -207,18 +224,33 @@ export default function SettingsPage() {
   };
 
   const handleChangePassword = async () => {
-    if (!newPw || !confirmPw) return showToast('Please fill all password fields', 'error');
+    if (!currentPw || !newPw || !confirmPw) return showToast('Please fill all password fields', 'error');
     if (newPw.length < 6) return showToast('Password must be at least 6 characters', 'error');
     if (newPw !== confirmPw) return showToast('Passwords do not match', 'error');
     setSavingPw(true);
     try {
+      // Verify current password by attempting to sign in
+      await signIn(user.email, currentPw);
       await updatePassword(newPw);
-      setNewPw(''); setConfirmPw('');
+      setCurrentPw(''); setNewPw(''); setConfirmPw('');
       showToast('Password updated successfully!');
     } catch (err) {
-      showToast(err.message || 'Failed to change password', 'error');
+      if (err.message.toLowerCase().includes('invalid login credentials')) {
+        showToast('Current password is incorrect', 'error');
+      } else {
+        showToast(err.message || 'Failed to change password', 'error');
+      }
     } finally {
       setSavingPw(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    try {
+      await resetPasswordForEmail(user.email);
+      showToast('Password reset link sent to your email!');
+    } catch (err) {
+      showToast(err.message || 'Failed to send reset link', 'error');
     }
   };
 
@@ -265,6 +297,7 @@ export default function SettingsPage() {
       await supabase.from('notifications').delete().eq('gym_id', gym.id);
       await supabase.from('members').delete().eq('gym_id', gym.id);
       setDeleteConfirm('');
+      setShowDangerModal(false);
       showToast('All gym data has been deleted.');
     } catch (err) {
       showToast(err.message || 'Deletion failed', 'error');
@@ -310,7 +343,7 @@ export default function SettingsPage() {
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Field label="Gym Name" id="settings-gym-name" type="text" value={newGymName} onChange={e => setNewGymName(e.target.value)} placeholder="Enter gym name" />
-            <Field label="Owner Email" id="settings-owner-email" type="email" value={ownerEmail || ''} disabled readOnly />
+            <Field label="Owner Email" id="settings-owner-email" type="email" value={getObfuscatedEmail(ownerEmail)} disabled readOnly />
             <Field label="Gym ID" id="settings-gym-id" type="text" value={gym?.id || ''} disabled readOnly />
             <Field label="Registry Date" id="settings-created-at" type="text" value={gym?.created_at ? new Date(gym.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : ''} disabled readOnly />
           </div>
@@ -349,39 +382,50 @@ export default function SettingsPage() {
               {!showAddPlan ? (
                 <button 
                   onClick={() => setShowAddPlan(true)}
-                  className="p-4 rounded-xl border border-dashed border-white/10 hover:border-[#3390ec]/50 hover:bg-[#3390ec]/5 text-gray-500 hover:text-[#3390ec] transition-all flex items-center justify-center gap-2"
+                  className="p-5 rounded-xl border-2 border-dashed border-white/10 hover:border-[#3390ec]/50 hover:bg-[#3390ec]/5 text-gray-500 hover:text-[#3390ec] transition-all flex flex-col items-center justify-center gap-2 h-full min-h-[100px]"
                 >
-                  <Plus className="w-4 h-4" />
-                  <span className="text-xs font-bold uppercase tracking-widest">Add New Plan</span>
+                  <Plus className="w-5 h-5" />
+                  <span className="text-[11px] font-bold uppercase tracking-widest">Add New Plan</span>
                 </button>
               ) : (
-                <div className="p-4 rounded-xl bg-white/[0.05] border border-[#3390ec]/30 space-y-3">
-                  <input 
-                    type="text" 
-                    placeholder="Plan Name (e.g. Monthly Gold)" 
-                    className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
-                    value={newPlan.name}
-                    onChange={e => setNewPlan({...newPlan, name: e.target.value})}
-                  />
-                  <div className="flex gap-2">
-                    <input 
-                      type="number" 
-                      placeholder="Days" 
-                      className="w-1/2 bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
-                      value={newPlan.duration_days}
-                      onChange={e => setNewPlan({...newPlan, duration_days: parseInt(e.target.value)})}
-                    />
-                    <input 
-                      type="number" 
-                      placeholder="Price" 
-                      className="w-1/2 bg-[#1c1c1c] border border-white/5 rounded-lg px-3 py-1.5 text-xs text-white"
-                      value={newPlan.price}
-                      onChange={e => setNewPlan({...newPlan, price: parseFloat(e.target.value)})}
-                    />
+                <div className="p-5 rounded-xl bg-[#2a2a2a] border border-[#3390ec]/50 space-y-4 shadow-lg shadow-[#3390ec]/10 flex flex-col justify-between">
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Plan Name</label>
+                      <input 
+                        type="text" 
+                        placeholder="e.g. Monthly Gold" 
+                        className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
+                        value={newPlan.name}
+                        onChange={e => setNewPlan({...newPlan, name: e.target.value})}
+                      />
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="space-y-1 w-1/2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Duration (Days)</label>
+                        <input 
+                          type="number" 
+                          placeholder="30" 
+                          className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
+                          value={newPlan.duration_days}
+                          onChange={e => setNewPlan({...newPlan, duration_days: parseInt(e.target.value)})}
+                        />
+                      </div>
+                      <div className="space-y-1 w-1/2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Price</label>
+                        <input 
+                          type="number" 
+                          placeholder="Price" 
+                          className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
+                          value={newPlan.price}
+                          onChange={e => setNewPlan({...newPlan, price: parseFloat(e.target.value)})}
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-2 pt-1">
-                    <button onClick={handleAddPlan} className="flex-1 py-1.5 bg-[#3390ec] text-white text-[10px] font-black uppercase tracking-wider rounded-lg">Save</button>
-                    <button onClick={() => setShowAddPlan(false)} className="px-3 py-1.5 bg-white/5 text-gray-400 text-[10px] font-black uppercase tracking-wider rounded-lg">Cancel</button>
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={handleAddPlan} className="flex-1 py-2.5 bg-[#3390ec] hover:bg-[#2b7ad2] text-white text-xs font-bold rounded-lg transition-colors">Save Plan</button>
+                    <button onClick={() => setShowAddPlan(false)} className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-lg transition-colors">Cancel</button>
                   </div>
                 </div>
               )}
@@ -410,7 +454,22 @@ export default function SettingsPage() {
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 px-1">WhatsApp Template</label>
+              <div className="flex items-center justify-between px-1">
+                <label className="text-xs font-medium text-gray-400">WhatsApp Template</label>
+                <select
+                  onChange={(e) => {
+                    const template = WA_PRESETS.find(p => p.label === e.target.value)?.text;
+                    if (template) setGlobalSettings({...globalSettings, waTemplate: template});
+                  }}
+                  className="bg-transparent border-none text-[10px] font-bold text-[#3390ec] uppercase tracking-wider cursor-pointer focus:outline-none"
+                  defaultValue=""
+                >
+                  <option value="" disabled>Load Preset</option>
+                  {WA_PRESETS.map(preset => (
+                    <option key={preset.label} value={preset.label} className="text-black">{preset.label}</option>
+                  ))}
+                </select>
+              </div>
               <textarea
                 rows={3}
                 value={globalSettings.waTemplate}
@@ -434,19 +493,28 @@ export default function SettingsPage() {
           title="Security" 
           description="Manage your account password"
         >
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Field label="Current Password" id="settings-current-pw" type={showPasswords ? 'text' : 'password'} value={currentPw} onChange={e => setCurrentPw(e.target.value)} placeholder="Required" />
             <Field label="New Password" id="settings-new-pw" type={showPasswords ? 'text' : 'password'} value={newPw} onChange={e => setNewPw(e.target.value)} placeholder="Min 6 characters" />
             <Field label="Confirm Password" id="settings-confirm-pw" type={showPasswords ? 'text' : 'password'} value={confirmPw} onChange={e => setConfirmPw(e.target.value)} placeholder="Re-enter password" />
           </div>
-          <div className="flex items-center justify-between pt-2">
-            <button 
-              onClick={() => setShowPasswords(!showPasswords)} 
-              className="text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1.5"
-            >
-              {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-              {showPasswords ? 'Hide Password' : 'Show Password'}
-            </button>
-            <button onClick={handleChangePassword} disabled={savingPw} className="px-6 py-2 bg-white/5 hover:bg-white/10 text-white font-medium rounded-lg text-sm transition-all border border-white/5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <div className="flex items-center gap-4">
+              <button 
+                onClick={() => setShowPasswords(!showPasswords)} 
+                className="text-xs font-medium text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1.5"
+              >
+                {showPasswords ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                {showPasswords ? 'Hide Password' : 'Show Password'}
+              </button>
+              <button 
+                onClick={handleForgotPassword}
+                className="text-xs font-bold text-[#3390ec] hover:text-[#2b7ad2] transition-colors"
+              >
+                Forgot Password?
+              </button>
+            </div>
+            <button onClick={handleChangePassword} disabled={savingPw} className="px-6 py-2 bg-[#3390ec] hover:bg-[#2b7ad2] text-white font-medium rounded-lg text-sm transition-all shadow-lg shadow-[#3390ec]/20">
               {savingPw ? 'Updating...' : 'Change Password'}
             </button>
           </div>
@@ -465,37 +533,76 @@ export default function SettingsPage() {
         </Section>
 
         {/* Danger Zone */}
-        <div className="bg-[#212121] border border-red-500/10 rounded-xl p-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="text-red-500">
-              <AlertTriangle className="w-5 h-5" />
-            </div>
-            <div>
-              <h3 className="text-white font-bold text-lg">Danger Zone</h3>
-              <p className="text-gray-500 text-xs mt-0.5">Irreversible actions for your gym data</p>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row items-end gap-4">
-            <div className="flex-1 w-full space-y-1.5">
-              <label className="text-xs font-medium text-gray-400 px-1">Type "DELETE" to confirm data wipe</label>
-              <input 
-                type="text" 
-                value={deleteConfirm} 
-                onChange={e => setDeleteConfirm(e.target.value)} 
-                placeholder='Type DELETE' 
-                className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-red-500/50" 
-              />
+        <div className="bg-red-500/5 border border-red-500/20 rounded-xl p-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/10 rounded-full blur-3xl pointer-events-none" />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-500">
+                <AlertTriangle className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-red-500 font-bold text-lg">Danger Zone</h3>
+                <p className="text-red-400/70 text-xs mt-0.5">Irreversible actions for your gym data</p>
+              </div>
             </div>
             <button 
-              onClick={handleDeleteAllMembers} 
-              disabled={deleting || deleteConfirm !== 'DELETE'} 
-              className="px-6 py-2.5 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white disabled:opacity-20 font-medium rounded-lg text-sm transition-all border border-red-500/20"
+              onClick={() => setShowDangerModal(true)} 
+              className="px-6 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/20 whitespace-nowrap"
             >
-              {deleting ? 'Erasing...' : 'Wipe All Data'}
+              Wipe All Data
             </button>
           </div>
         </div>
+
+        {/* Danger Modal */}
+        {showDangerModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#1c1c1c] border border-red-500/30 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-red-500/0 via-red-500 to-red-500/0" />
+              
+              <div className="flex flex-col items-center text-center space-y-4 mb-8">
+                <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-2 border border-red-500/20">
+                  <AlertTriangle className="w-8 h-8 text-red-500" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Are you absolutely sure?</h3>
+                  <p className="text-gray-400 text-sm leading-relaxed">
+                    This action <strong className="text-red-400 font-bold">cannot be undone</strong>. This will permanently delete all your athletes, subscriptions, payments, and notifications.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5 text-left">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Type "DELETE" to confirm</label>
+                  <input 
+                    type="text" 
+                    value={deleteConfirm} 
+                    onChange={e => setDeleteConfirm(e.target.value)} 
+                    placeholder="DELETE" 
+                    className="w-full bg-[#121212] border border-red-500/20 rounded-xl px-4 py-3 text-sm text-white placeholder-gray-700 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500 transition-all text-center tracking-[0.2em] font-bold" 
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button 
+                    onClick={() => { setShowDangerModal(false); setDeleteConfirm(''); }}
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleDeleteAllMembers} 
+                    disabled={deleting || deleteConfirm !== 'DELETE'} 
+                    className="px-4 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-30 disabled:hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/20"
+                  >
+                    {deleting ? 'Erasing...' : 'Wipe Data'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Sign Out */}
         <div className="bg-[#212121] border border-white/5 rounded-xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
