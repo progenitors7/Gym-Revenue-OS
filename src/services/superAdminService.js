@@ -33,23 +33,38 @@ export const superAdminService = {
       const totalRevenue = payments.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
 
 
-      // 4. Monthly Gym Signups (Simple grouping for now)
+      // 4. Monthly Gym Signups & Growth Rate
       const { data: gymData, error: growthError } = await supabase
         .from('gyms')
         .select('created_at');
       
       if (growthError) throw growthError;
 
-      // Basic growth calculation (last 30 days)
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      const recentGyms = gymData?.filter(g => new Date(g.created_at) >= thirtyDaysAgo).length || 0;
+      // Basic growth calculation (last 30 days vs previous 30 days)
+      const now = new Date();
+      const thirtyDaysAgo = new Date(now.getTime() - (30 * 24 * 60 * 60 * 1000));
+      const sixtyDaysAgo = new Date(now.getTime() - (60 * 24 * 60 * 60 * 1000));
+
+      const recentGymsCount = gymData?.filter(g => new Date(g.created_at) >= thirtyDaysAgo).length || 0;
+      const previousGymsCount = gymData?.filter(g => {
+        const d = new Date(g.created_at);
+        return d >= sixtyDaysAgo && d < thirtyDaysAgo;
+      }).length || 0;
+
+      // Calculate growth rate percentage
+      let growthRate = 0;
+      if (previousGymsCount === 0) {
+        growthRate = recentGymsCount > 0 ? 100 : 0;
+      } else {
+        growthRate = Math.round(((recentGymsCount - previousGymsCount) / previousGymsCount) * 100);
+      }
 
       return {
         totalGyms: gymCount || 0,
         totalMembers: memberCount || 0,
         totalRevenue,
-        recentGyms,
+        recentGyms: recentGymsCount,
+        growthRate,
         allGyms: gymData || []
       };
     } catch (error) {
@@ -235,5 +250,18 @@ export const superAdminService = {
     
     if (error) throw error;
     return data;
+  },
+
+  /**
+   * Permanently delete a gym and all its associated data.
+   */
+  async deleteGym(gymId) {
+    const { error } = await supabase
+      .from('gyms')
+      .delete()
+      .eq('id', gymId);
+    
+    if (error) throw error;
+    return true;
   }
 };

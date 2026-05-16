@@ -7,9 +7,11 @@
  *  - onCancel: () => void
  *  - mode: 'add' | 'edit'
  */
-import { useState } from 'react'
-import { User, Phone, Activity, Award, Calendar, FileText } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { User, Phone, Activity, Award, Calendar, FileText, CreditCard } from 'lucide-react'
 import DatePicker from '../UI/DatePicker'
+import { unifiedService } from '../../services/unifiedService'
+import { useCurrentGym } from '../../hooks/useCurrentGym'
 
 const PLANS = ['Monthly', 'Quarterly', '6 Months', 'Annual', 'Day Pass', 'Custom']
 
@@ -42,8 +44,36 @@ const inputCls = 'w-full pl-12 pr-5 py-4 rounded-2xl bg-white/[0.03] border bord
 export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mode = 'add' }) {
   const [form, setForm] = useState({ ...DEFAULTS, ...initialValues })
   const [errors, setErrors] = useState({})
-  const [submitting, setSubmitting] = useState(false)
   const [globalError, setGlobalError] = useState(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [recordPayment, setRecordPayment] = useState(mode === 'add')
+  const [amountPaid, setAmountPaid] = useState('')
+  const { gym } = useCurrentGym()
+
+  // Auto-calculate expiry date based on plan
+  useEffect(() => {
+    if (!form.join_date || !form.membership_plan || form.membership_plan === 'Custom') return
+
+    const calculateExpiry = (startDate, plan) => {
+      const date = new Date(startDate)
+      if (isNaN(date.getTime())) return null
+
+      switch (plan) {
+        case 'Monthly': date.setDate(date.getDate() + 30); break
+        case 'Quarterly': date.setDate(date.getDate() + 90); break
+        case '6 Months': date.setDate(date.getDate() + 180); break
+        case 'Annual': date.setDate(date.getDate() + 365); break
+        case 'Day Pass': date.setDate(date.getDate() + 1); break
+        default: return null
+      }
+      return date.toISOString().split('T')[0]
+    }
+
+    const newExpiry = calculateExpiry(form.join_date, form.membership_plan)
+    if (newExpiry && newExpiry !== form.expiry_date) {
+      setForm(f => ({ ...f, expiry_date: newExpiry }))
+    }
+  }, [form.join_date, form.membership_plan])
 
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
@@ -71,7 +101,34 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
       const payload = Object.fromEntries(
         Object.entries(form).map(([k, v]) => [k, v === '' ? null : v])
       )
-      await onSubmit(payload)
+      
+      // Create Member
+      const newMember = await onSubmit(payload)
+
+      // Unified Action: Record initial subscription and payment if requested
+      if (mode === 'add' && newMember && gym) {
+        if (recordPayment && amountPaid > 0) {
+          await unifiedService.smartRenew(
+            gym.id,
+            newMember.id,
+            {
+              plan_name: form.membership_plan,
+              duration_type: form.membership_plan.toLowerCase(),
+              amount: parseFloat(amountPaid),
+              expiry_date: form.expiry_date
+            },
+            {
+              amount_paid: parseFloat(amountPaid),
+              payment_method: 'cash',
+              payment_status: 'paid',
+              notes: 'Initial registration payment'
+            }
+          );
+        } else {
+          // Just record the subscription without payment if not paying now
+          await unifiedService.recordInitialMemberSetup(gym.id, newMember);
+        }
+      }
     } catch (err) {
       setGlobalError(err.message || 'Something went wrong.')
     } finally {
@@ -80,7 +137,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8" noValidate>
+    <div className="space-y-8">
       {globalError && (
         <div className="px-6 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-bold uppercase tracking-wider animate-shake">
           {globalError}
@@ -97,6 +154,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
             value={form.full_name}
             onChange={set('full_name')}
             placeholder="e.g. Rahul Sharma"
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
             className={inputCls}
           />
         </Field>
@@ -108,6 +166,7 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
             value={form.phone_number}
             onChange={set('phone_number')}
             placeholder="e.g. 9876543210"
+            onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
             className={inputCls}
           />
         </Field>
@@ -162,6 +221,55 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
         />
       </Field>
 
+      {/* Quick Payment (Only in Add Mode) */}
+      {mode === 'add' && (
+        <div className="p-6 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                <CreditCard className="w-5 h-5 text-emerald-400" />
+              </div>
+              <div>
+                <h4 className="text-sm font-black text-white uppercase tracking-wider">Initial Payment</h4>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">Collect fees right now?</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={recordPayment}
+                onChange={e => setRecordPayment(e.target.checked)}
+              />
+              <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+            </label>
+          </div>
+
+          {recordPayment && (
+            <motion.div 
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              className="grid sm:grid-cols-2 gap-5 pt-2"
+            >
+              <Field label="Amount Paid (₹)" required>
+                <input
+                  type="number"
+                  value={amountPaid}
+                  onChange={e => setAmountPaid(e.target.value)}
+                  placeholder="e.g. 500"
+                  className={inputCls}
+                />
+              </Field>
+              <div className="flex items-end pb-1">
+                <p className="text-[10px] font-bold text-emerald-500/60 uppercase tracking-widest leading-tight">
+                  Recording this will automatically mark the athlete as <span className="text-emerald-400">Active</span> and create a ledger entry.
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      )}
+
       {/* Actions */}
       <div className="flex flex-col sm:flex-row justify-end gap-4 pt-8">
         <button
@@ -174,7 +282,8 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
         </button>
         <button
           id="member-form-submit"
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={submitting}
           className="order-1 sm:order-2 group relative px-10 py-4 rounded-2xl bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-white text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 hover:scale-[1.02] active:scale-95"
         >
@@ -190,6 +299,6 @@ export default function MemberForm({ initialValues = {}, onSubmit, onCancel, mod
           )}
         </button>
       </div>
-    </form>
+    </div>
   )
 }

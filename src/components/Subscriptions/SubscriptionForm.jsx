@@ -23,6 +23,29 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
     }
   }, [fetchMembers, members.length]);
 
+  // Auto-calculate expiry date
+  useEffect(() => {
+    if (!formData.start_date || !formData.duration_type || formData.duration_type === 'custom') return;
+
+    const calculateExpiry = (startDate, type) => {
+      const date = new Date(startDate);
+      if (isNaN(date.getTime())) return null;
+
+      switch (type) {
+        case 'monthly': date.setDate(date.getDate() + 30); break;
+        case 'quarterly': date.setDate(date.getDate() + 90); break;
+        case 'yearly': date.setDate(date.getDate() + 365); break;
+        default: return null;
+      }
+      return date.toISOString().split('T')[0];
+    };
+
+    const newExpiry = calculateExpiry(formData.start_date, formData.duration_type);
+    if (newExpiry && newExpiry !== formData.expiry_date) {
+      setFormData(prev => ({ ...prev, expiry_date: newExpiry }));
+    }
+  }, [formData.start_date, formData.duration_type]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -34,7 +57,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-10">
+    <div className="space-y-10">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Member Selection */}
@@ -125,16 +148,23 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
           />
         </div>
 
-        {/* Custom Expiry Date */}
-        {formData.duration_type === 'custom' && (
-          <div className="space-y-3 md:col-span-2 animate-in fade-in slide-in-from-top-2 duration-300">
-            <label className="block text-[10px] font-black text-rose-500 uppercase tracking-[0.2em] ml-1">Custom Termination Date</label>
+        {/* Expiry Date Display/Input */}
+        <div className="space-y-3 md:col-span-2">
+          <label className={`block text-[10px] font-black uppercase tracking-[0.2em] ml-1 ${formData.duration_type === 'custom' ? 'text-rose-500' : 'text-slate-500'}`}>
+            {formData.duration_type === 'custom' ? 'Custom Termination Date' : 'Estimated Expiry Date'}
+          </label>
+          {formData.duration_type === 'custom' ? (
             <DatePicker
               value={formData.expiry_date}
               onChange={(val) => setFormData(prev => ({ ...prev, expiry_date: val }))}
             />
-          </div>
-        )}
+          ) : (
+            <div className="w-full pl-12 pr-5 py-4 rounded-2xl bg-white/[0.01] border border-white/5 text-slate-400 text-sm font-medium flex items-center relative">
+              <Calendar className="absolute left-5 w-4 h-4 text-slate-600" />
+              {formData.expiry_date ? new Date(formData.expiry_date).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }) : 'Select duration first'}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 pt-8 border-t border-white/5">
@@ -145,8 +175,8 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
         >
           Cancel
         </button>
-        <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={isSubmitting}
           className="order-1 sm:order-2 flex-1 py-4 px-6 bg-emerald-500 hover:bg-emerald-400 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-emerald-500/20 disabled:opacity-50 hover:scale-[1.02] active:scale-95"
         >
@@ -160,6 +190,6 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
           )}
         </button>
       </div>
-    </form>
+    </div>
   );
 }

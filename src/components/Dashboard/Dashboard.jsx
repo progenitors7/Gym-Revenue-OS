@@ -242,7 +242,7 @@ export default function Dashboard() {
         {/* Right Column (Actionable Widgets) */}
         <div className="space-y-6 sm:space-y-8">
           <motion.div variants={itemVariants}>
-            <ExpiringWidget members={stats.expiringMembers} />
+            <ExpiringWidget members={stats.expiringMembers} onRefresh={fetchStats} />
           </motion.div>
           <motion.div variants={itemVariants}>
             <PendingPaymentsWidget payments={stats.pendingPayments} />

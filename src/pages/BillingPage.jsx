@@ -128,7 +128,7 @@ export default function BillingPage() {
           .from('gyms')
           .update({ 
             status: 'active',
-            saas_plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Professional Plan
+            saas_plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Professional Plan (We can make this dynamic if needed)
           })
           .eq('id', gym.id);
         
@@ -166,7 +166,8 @@ export default function BillingPage() {
         body: { 
           action: 'create-order', 
           amount: finalAmount,
-          durationMonths: selectedDuration.months 
+          durationMonths: selectedDuration.months,
+          planId: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Dynamic Plan ID
         }
       });
 

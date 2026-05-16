@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, CreditCard, Sparkles } from 'lucide-react';
 import PaymentForm from './PaymentForm';
 import { usePayments } from '../../hooks/usePayments';
+import { unifiedService } from '../../services/unifiedService';
+import { useCurrentGym } from '../../hooks/useCurrentGym';
 
 export default function AddPaymentPage() {
   const navigate = useNavigate();
   const { addPayment, error } = usePayments();
+  const { gym } = useCurrentGym();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
@@ -14,12 +17,25 @@ export default function AddPaymentPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      // Ensure empty strings are null for optional foreign keys
-      const dataToSubmit = {
-        ...formData,
-        subscription_id: formData.subscription_id || null
-      };
-      await addPayment(dataToSubmit);
+      if (formData.smart_renew) {
+        await unifiedService.smartRenew(
+          gym.id,
+          formData.member_id,
+          formData.smart_renew,
+          {
+            amount_paid: formData.amount_paid,
+            payment_method: formData.payment_method,
+            payment_status: formData.payment_status,
+            notes: formData.notes
+          }
+        );
+      } else {
+        const dataToSubmit = {
+          ...formData,
+          subscription_id: formData.subscription_id || null
+        };
+        await addPayment(dataToSubmit);
+      }
       navigate('/payments');
     } catch (err) {
       setSubmitError(err.message);

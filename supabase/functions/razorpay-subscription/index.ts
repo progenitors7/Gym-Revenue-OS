@@ -16,7 +16,7 @@ serve(async (req: Request) => {
 
   try {
     const body = await req.json()
-    const { action, amount, durationMonths, paymentData, promoId } = body
+    const { action, amount, durationMonths, paymentData, promoId, planId } = body
     
     console.log(`EDGE_FUNCTION_LOG: Received action=${action}`, { amount, durationMonths, promoId })
 
@@ -59,7 +59,8 @@ serve(async (req: Request) => {
           receipt: `receipt_${Date.now()}`,
           notes: {
             durationMonths,
-            promoId
+            promoId,
+            planId
           }
         })
       })
@@ -146,7 +147,7 @@ serve(async (req: Request) => {
         .from('gyms')
         .update({ 
           status: 'active',
-          saas_plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Professional
+          saas_plan_id: planId || '770f855a-535c-44f1-9604-0ba7a74c6f59'
         })
         .eq('id', gym.id)
 
@@ -160,7 +161,7 @@ serve(async (req: Request) => {
         .from('saas_subscriptions')
         .insert([{
           gym_id: gym.id,
-          plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59',
+          plan_id: planId || '770f855a-535c-44f1-9604-0ba7a74c6f59',
           razorpay_order_id,
           razorpay_payment_id,
           razorpay_signature,

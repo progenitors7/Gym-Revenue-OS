@@ -1,15 +1,18 @@
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../hooks/useAuth'
+import { useCurrentGym } from '../../hooks/useCurrentGym'
 
 export default function ProtectedRoute({ children }) {
-  const { user, loading } = useAuth()
+  const { user, loading: authLoading } = useAuth()
+  const { gym, gymLoading } = useCurrentGym()
+  const location = useLocation()
 
-  if (loading) {
+  if (authLoading || gymLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-[#121212]">
         <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin" />
-          <p className="text-slate-400 text-sm">Loading...</p>
+          <div className="w-8 h-8 border-2 border-[#3390ec] border-t-transparent rounded-full animate-spin" />
+          <p className="text-gray-500 text-xs font-bold uppercase tracking-widest">Verifying Access...</p>
         </div>
       </div>
     )
@@ -17,6 +20,15 @@ export default function ProtectedRoute({ children }) {
 
   if (!user) {
     return <Navigate to="/" replace />
+  }
+
+  // Subscription Paywall: Redirect to billing if gym is pending
+  // Allow access to /billing page itself and /super-admin
+  const isBillingPage = location.pathname === '/billing'
+  const isSuperAdmin = location.pathname.startsWith('/super-admin')
+  
+  if (gym?.status === 'pending' && !isBillingPage && !isSuperAdmin) {
+    return <Navigate to="/billing" replace />
   }
 
   return children

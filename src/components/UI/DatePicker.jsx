@@ -60,13 +60,15 @@ export default function DatePicker({ value, onChange, label, placeholder = 'Sele
               </h4>
               <div className="flex gap-1">
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setViewDate(subMonths(viewDate, 1)); }}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(subMonths(viewDate, 1)); }}
                   className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all"
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
                 <button 
-                  onClick={(e) => { e.stopPropagation(); setViewDate(addMonths(viewDate, 1)); }}
+                  type="button"
+                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); setViewDate(addMonths(viewDate, 1)); }}
                   className="p-2 hover:bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all"
                 >
                   <ChevronRight className="w-4 h-4" />
@@ -90,7 +92,8 @@ export default function DatePicker({ value, onChange, label, placeholder = 'Sele
                 return (
                   <button
                     key={idx}
-                    onClick={(e) => { e.stopPropagation(); handleDateClick(day); }}
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDateClick(day); }}
                     className={`
                       aspect-square flex items-center justify-center text-xs font-bold rounded-xl transition-all
                       ${!isCurrentMonth ? 'text-slate-800' : 'text-slate-300 hover:bg-white/5 hover:text-white'}
@@ -105,7 +108,8 @@ export default function DatePicker({ value, onChange, label, placeholder = 'Sele
 
             <div className="mt-4 pt-4 border-t border-white/5 flex justify-center">
               <button 
-                onClick={(e) => { e.stopPropagation(); handleDateClick(new Date()); }}
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDateClick(new Date()); }}
                 className="text-[10px] font-black uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors"
               >
                 Set Today

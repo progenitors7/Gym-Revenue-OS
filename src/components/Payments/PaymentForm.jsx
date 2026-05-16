@@ -4,6 +4,17 @@ import { User, Receipt, CreditCard, Calendar, FileText } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 import DatePicker from '../UI/DatePicker';
+import { motion, AnimatePresence } from 'framer-motion';
+import { unifiedService } from '../../services/unifiedService';
+import { useCurrentGym } from '../../hooks/useCurrentGym';
+
+const PLANS = [
+  { name: 'Monthly', duration: 30, price: 500 },
+  { name: 'Quarterly', duration: 90, price: 1400 },
+  { name: '6 Months', duration: 180, price: 2500 },
+  { name: 'Annual', duration: 365, price: 4500 },
+  { name: 'Day Pass', duration: 1, price: 50 }
+];
 
 export default function PaymentForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
@@ -19,6 +30,9 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
     payment_status: initialData?.payment_status || 'paid',
     notes: initialData?.notes || ''
   });
+  const [shouldRenew, setShouldRenew] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState(PLANS[0]);
+  const { gym } = useCurrentGym();
 
   useEffect(() => {
     fetchMembers();
@@ -47,7 +61,15 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    const data = { ...formData };
+    if (shouldRenew) {
+      data.smart_renew = {
+        plan_name: selectedPlan.name,
+        duration_type: selectedPlan.name.toLowerCase(),
+        amount: parseFloat(formData.amount_paid)
+      };
+    }
+    onSubmit(data);
   };
 
   return (
@@ -180,6 +202,65 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
             />
           </div>
         </div>
+
+        {/* Smart Renewal Toggle (Only for New Payments) */}
+        {!initialData && (
+          <div className="space-y-4 md:col-span-2 p-6 rounded-[2rem] bg-emerald-500/5 border border-emerald-500/10">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                  <Sparkles className="w-5 h-5 text-emerald-400" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-white uppercase tracking-wider text-left">Renew Membership?</h4>
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-0.5 text-left">Automatically extend athlete's validity</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  className="sr-only peer" 
+                  checked={shouldRenew}
+                  onChange={e => setShouldRenew(e.target.checked)}
+                />
+                <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+              </label>
+            </div>
+
+            <AnimatePresence>
+              {shouldRenew && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="space-y-4 pt-4 border-t border-emerald-500/10"
+                >
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] ml-1">Extension Plan</label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {PLANS.map((plan) => (
+                      <button
+                        key={plan.name}
+                        type="button"
+                        onClick={() => {
+                          setSelectedPlan(plan);
+                          setFormData(f => ({ ...f, amount_paid: plan.price }));
+                        }}
+                        className={`p-3 rounded-xl border transition-all text-left ${
+                          selectedPlan.name === plan.name 
+                            ? 'bg-emerald-500/10 border-emerald-500/50' 
+                            : 'bg-white/[0.02] border-white/5 hover:bg-white/[0.05]'
+                        }`}
+                      >
+                        <p className="text-[10px] font-black uppercase text-slate-400">{plan.name}</p>
+                        <p className="text-sm font-bold text-white">₹{plan.price}</p>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
 
       </div>
 

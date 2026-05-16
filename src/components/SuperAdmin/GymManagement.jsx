@@ -18,6 +18,8 @@ export default function GymManagement() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
   const [toast, setToast] = useState({ message: '', type: 'success' });
 
   const showToast = (message, type = 'success') => {
@@ -41,6 +43,19 @@ export default function GymManagement() {
     }
   }
 
+  async function handleDeleteGym(gymId) {
+    try {
+      setUpdatingId(gymId);
+      await superAdminService.deleteGym(gymId);
+      setGyms(prev => prev.filter(g => g.id !== gymId));
+      showToast('Gym deleted permanently');
+    } catch (err) {
+      showToast('Failed to delete gym', 'error');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
   async function handleStatusChange(gymId, newStatus) {
     try {
       setUpdatingId(gymId);
@@ -54,10 +69,12 @@ export default function GymManagement() {
     }
   }
 
-  const filteredGyms = gyms.filter(g => 
-    g.gym_name.toLowerCase().includes(search.toLowerCase()) || 
-    g.id.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredGyms = gyms.filter(g => {
+    const matchesSearch = g.gym_name.toLowerCase().includes(search.toLowerCase()) || 
+                         g.id.toLowerCase().includes(search.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || g.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
 
   if (loading && gyms.length === 0) {
     return <div className="py-20 text-center text-gray-500 font-medium">Loading Gym Directory...</div>;
@@ -83,10 +100,16 @@ export default function GymManagement() {
           />
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 bg-[#212121] border border-white/5 rounded-xl text-xs font-bold text-gray-400 hover:text-white transition-all">
-            <Filter className="w-3.5 h-3.5" />
-            Filter Status
-          </button>
+          <select 
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="flex-1 sm:flex-none bg-[#212121] border border-white/5 rounded-xl px-4 py-2.5 text-xs font-bold text-gray-400 hover:text-white transition-all focus:outline-none focus:border-[#3390ec]/50"
+          >
+            <option value="all">All Status</option>
+            <option value="active">Active</option>
+            <option value="blocked">Blocked</option>
+            <option value="pending">Pending</option>
+          </select>
         </div>
       </div>
 
@@ -133,31 +156,78 @@ export default function GymManagement() {
                       {gym.status || 'active'}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-right">
+                  <td className="px-6 py-4 text-right relative">
                     <div className="flex items-center justify-end gap-2">
-                      {gym.status !== 'active' && (
+                      <div className="relative">
                         <button 
-                          onClick={() => handleStatusChange(gym.id, 'active')}
-                          disabled={updatingId === gym.id}
-                          className="p-2 rounded-lg bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"
-                          title="Activate Gym"
+                          onClick={() => setOpenMenuId(openMenuId === gym.id ? null : gym.id)}
+                          className={`p-2 rounded-lg transition-all ${
+                            openMenuId === gym.id ? 'bg-[#3390ec] text-white' : 'bg-white/5 text-gray-400 hover:text-white'
+                          }`}
                         >
-                          <ShieldCheck className="w-4 h-4" />
+                          <MoreVertical className="w-4 h-4" />
                         </button>
-                      )}
-                      {gym.status !== 'blocked' && (
-                        <button 
-                          onClick={() => handleStatusChange(gym.id, 'blocked')}
-                          disabled={updatingId === gym.id}
-                          className="p-2 rounded-lg bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white transition-all"
-                          title="Block Gym"
-                        >
-                          <Ban className="w-4 h-4" />
-                        </button>
-                      )}
-                      <button className="p-2 rounded-lg bg-white/5 text-gray-400 hover:text-white transition-all">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
+
+                        {openMenuId === gym.id && (
+                          <>
+                            <div 
+                              className="fixed inset-0 z-10" 
+                              onClick={() => setOpenMenuId(null)}
+                            />
+                            <div className="absolute right-0 mt-2 w-48 bg-[#1c1c1c] border border-white/10 rounded-xl shadow-2xl z-20 py-2 animate-in zoom-in-95 duration-200">
+                              <button 
+                                onClick={() => {
+                                  window.open(`/gym/${gym.id}`, '_blank');
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                              >
+                                <ExternalLink className="w-4 h-4" />
+                                View Gym App
+                              </button>
+                              
+                              <div className="h-px bg-white/5 my-1" />
+
+                              {gym.status !== 'active' ? (
+                                <button 
+                                  onClick={() => {
+                                    handleStatusChange(gym.id, 'active');
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-400/10 transition-all"
+                                >
+                                  <ShieldCheck className="w-4 h-4" />
+                                  Activate Gym
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => {
+                                    handleStatusChange(gym.id, 'blocked');
+                                    setOpenMenuId(null);
+                                  }}
+                                  className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-amber-400 hover:bg-amber-400/10 transition-all"
+                                >
+                                  <Ban className="w-4 h-4" />
+                                  Block Gym
+                                </button>
+                              )}
+
+                              <button 
+                                onClick={() => {
+                                  if (confirm(`Are you sure you want to PERMANENTLY delete ${gym.gym_name}? This cannot be undone.`)) {
+                                    handleDeleteGym(gym.id);
+                                  }
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-all"
+                              >
+                                <Ban className="w-4 h-4" />
+                                Delete Account
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </td>
                 </tr>

@@ -27,6 +27,8 @@ import PlanManager from '../components/SuperAdmin/PlanManager';
 import SupportCenter from '../components/SuperAdmin/SupportCenter';
 import SystemHealth from '../components/SuperAdmin/SystemHealth';
 import PromoCodeManager from '../components/SuperAdmin/PromoCodeManager';
+import SystemSettings from '../components/SuperAdmin/SystemSettings';
+import Toast from '../components/UI/Toast';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -70,7 +72,21 @@ function StatCard({ title, value, icon, trend, subtext }) {
 export default function SuperAdminPage() {
   const { stats, loading, error, refresh } = useSuperAdminStats();
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: 'success' });
   const navigate = useNavigate();
+
+  const handleSync = async () => {
+    try {
+      setSyncing(true);
+      await refresh();
+      setToast({ message: 'Platform data synced successfully', type: 'success' });
+    } catch (err) {
+      setToast({ message: 'Sync failed: ' + err.message, type: 'error' });
+    } finally {
+      setTimeout(() => setSyncing(false), 1000);
+    }
+  };
 
   if (loading && !stats) {
     return (
@@ -91,6 +107,7 @@ export default function SuperAdminPage() {
     { id: 'promo', label: 'Promo', icon: <Ticket className="w-4 h-4" /> },
     { id: 'support', label: 'Support', icon: <LifeBuoy className="w-4 h-4" /> },
     { id: 'health', label: 'Health', icon: <Activity className="w-4 h-4" /> },
+    { id: 'settings', label: 'Settings', icon: <Settings2 className="w-4 h-4" /> },
   ];
 
   return (
@@ -137,6 +154,12 @@ export default function SuperAdminPage() {
         </div>
       </div>
 
+      <Toast 
+        message={toast.message} 
+        type={toast.type} 
+        onClose={() => setToast({ message: '', type: 'success' })} 
+      />
+
       {error && (
         <motion.div 
           initial={{ opacity: 0, y: -10 }}
@@ -170,28 +193,26 @@ export default function SuperAdminPage() {
                   title="Registered Gyms"
                   value={stats?.totalGyms || 0}
                   icon={<Building2 className="w-5 h-5" />}
-                  trend="+12%"
+                  trend={stats?.growthRate >= 0 ? `+${stats.growthRate}%` : `${stats.growthRate}%`}
                   subtext="Total gym accounts"
                 />
                 <StatCard 
                   title="Active Members"
                   value={stats?.totalMembers || 0}
                   icon={<Users className="w-5 h-5" />}
-                  trend="+8%"
                   subtext="Aggregated across platform"
                 />
                 <StatCard 
                   title="Aggregated Revenue"
                   value={`₹${(stats?.totalRevenue || 0).toLocaleString()}`}
                   icon={<IndianRupee className="w-5 h-5" />}
-                  trend="+15%"
                   subtext="Monthly platform volume"
                 />
                 <StatCard 
                   title="System Growth"
                   value={`${stats?.growthRate || 0}%`}
                   icon={<BarChart3 className="w-5 h-5" />}
-                  trend="+5%"
+                  trend={stats?.growthRate >= 0 ? `+${stats.growthRate}%` : `${stats.growthRate}%`}
                   subtext="Month-over-month increase"
                 />
               </div>
@@ -214,13 +235,17 @@ export default function SuperAdminPage() {
                   </p>
                   <div className="flex flex-wrap gap-4">
                     <button 
-                      onClick={refresh}
-                      className="flex items-center gap-2 bg-[#3390ec] text-white px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-[#2b5278] transition-all active:scale-95 shadow-lg shadow-[#3390ec]/10"
+                      onClick={handleSync}
+                      disabled={syncing}
+                      className="flex items-center gap-2 bg-[#3390ec] text-white px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider hover:bg-[#2b5278] transition-all active:scale-95 shadow-lg shadow-[#3390ec]/10 disabled:opacity-50"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      Force Sync Data
+                      <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+                      {syncing ? 'Syncing...' : 'Force Sync Data'}
                     </button>
-                    <button className="flex items-center gap-2 bg-white/[0.03] text-slate-400 px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider hover:text-white hover:bg-white/[0.05] transition-all active:scale-95 border border-white/5">
+                    <button 
+                      onClick={() => setActiveTab('settings')}
+                      className="flex items-center gap-2 bg-white/[0.03] text-slate-400 px-6 py-3 rounded-xl font-bold text-[11px] uppercase tracking-wider hover:text-white hover:bg-white/[0.05] transition-all active:scale-95 border border-white/5"
+                    >
                       <Settings2 className="w-4 h-4" />
                       Global Config
                     </button>
@@ -236,6 +261,7 @@ export default function SuperAdminPage() {
           {activeTab === 'promo' && <PromoCodeManager />}
           {activeTab === 'support' && <SupportCenter />}
           {activeTab === 'health' && <SystemHealth />}
+          {activeTab === 'settings' && <SystemSettings />}
         </motion.div>
       </AnimatePresence>
     </motion.div>
