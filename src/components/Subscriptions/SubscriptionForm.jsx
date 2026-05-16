@@ -175,6 +175,7 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
         >
           Cancel
         </button>
+        <button
           type="button"
           onClick={handleSubmit}
           disabled={isSubmitting}
