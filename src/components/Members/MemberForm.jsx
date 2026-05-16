@@ -8,6 +8,7 @@
  *  - mode: 'add' | 'edit'
  */
 import { useState, useEffect } from 'react'
+import { motion } from 'framer-motion'
 import { User, Phone, Activity, Award, Calendar, FileText, CreditCard, Sparkles } from 'lucide-react'
 import DatePicker from '../UI/DatePicker'
 import { unifiedService } from '../../services/unifiedService'

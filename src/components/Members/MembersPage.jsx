@@ -17,10 +17,12 @@ import {
   Phone,
   Calendar,
   Layers,
-  ArrowRight
+  ArrowRight,
+  MessageCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMembers } from '../../hooks/useMembers';
+import { useCurrentGym } from '../../hooks/useCurrentGym';
 import StatusBadge from '../UI/StatusBadge';
 import ConfirmModal from '../UI/ConfirmModal';
 
@@ -99,6 +101,48 @@ export default function MembersPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const { gym } = useCurrentGym();
+
+  const handleWhatsApp = (member) => {
+    if (!member.phone_number) return;
+    const phone = member.phone_number.replace(/\D/g, '');
+    
+    // Get custom template or use default
+    let template = 'Hello {{name}}, your plan expires on {{date}}.';
+    if (gym?.id) {
+      try {
+        const saved = localStorage.getItem(`gym_settings_${gym.id}`);
+        if (saved) {
+          template = JSON.parse(saved).waTemplate || template;
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    const expiry = member.expiry_date ? new Date(member.expiry_date).toLocaleDateString() : 'soon';
+    
+    // Default dynamic texts based on status (fallback if user didn't write custom template correctly)
+    let text = template
+      .replace(/{{name}}/g, member.full_name)
+      .replace(/{{date}}/g, expiry)
+      .replace(/{{plan}}/g, member.membership_plan || 'plan');
+
+    if (!text.includes(member.full_name)) {
+       // If template doesn't have name (fallback)
+       if (member.status === 'expired') {
+         text = `Hi ${member.full_name}, aapka gym plan expire ho gaya hai. Kripya apna subscription jaldi renew karein taaki aapka workout miss na ho!`;
+       } else if (member.status === 'expiring_soon') {
+         text = `Hi ${member.full_name}, aapka gym plan jaldi expire hone wala hai. Kripya apna subscription renew karein!`;
+       } else {
+         text = `Hi ${member.full_name}, hope you are enjoying your workouts!`;
+       }
+    }
+    
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
   };
 
   const counts = {
@@ -283,6 +327,15 @@ export default function MembersPage() {
                         <td className="px-8 py-5"><StatusBadge status={member.status} /></td>
                         <td className="px-8 py-5">
                           <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                            {(member.status === 'expired' || member.status === 'expiring_soon') && (
+                              <button
+                                onClick={() => handleWhatsApp(member)}
+                                className="p-2.5 rounded-xl text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all border border-transparent hover:border-emerald-500/20"
+                                title="Send WhatsApp Reminder"
+                              >
+                                <MessageCircle className="w-4 h-4" />
+                              </button>
+                            )}
                             <button
                               onClick={() => navigate(`/members/${member.id}/edit`)}
                               className="p-2.5 rounded-xl text-[#94A3B8] hover:text-[#3B82F6] hover:bg-[#3B82F6]/10 transition-all border border-transparent hover:border-[#3B82F6]/20"
@@ -341,6 +394,15 @@ export default function MembersPage() {
                       </div>
                       
                       <div className="flex items-center gap-2">
+                        {(member.status === 'expired' || member.status === 'expiring_soon') && (
+                          <button
+                            onClick={() => handleWhatsApp(member)}
+                            className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] text-emerald-500 border border-white/5 active:bg-emerald-500/10 transition-colors shadow-sm"
+                            title="Send WhatsApp Reminder"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => navigate(`/members/${member.id}/edit`)}
                           className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/[0.03] text-[#94A3B8] border border-white/5 active:bg-white/10 transition-colors shadow-sm"

@@ -104,6 +104,65 @@ export default function PaymentsPage() {
         </button>
       </div>
 
+      {/* Analytics Dashboard */}
+      {!loading && !error && payments.length > 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4"
+        >
+          {(() => {
+            const today = new Date().toISOString().split('T')[0];
+            const thisMonth = new Date().toISOString().slice(0, 7);
+            
+            const todayRevenue = payments
+              .filter(p => p.payment_status === 'paid' && p.payment_date.startsWith(today))
+              .reduce((sum, p) => sum + parseFloat(p.amount_paid), 0);
+              
+            const monthRevenue = payments
+              .filter(p => p.payment_status === 'paid' && p.payment_date.startsWith(thisMonth))
+              .reduce((sum, p) => sum + parseFloat(p.amount_paid), 0);
+
+            const pendingRevenue = payments
+              .filter(p => p.payment_status === 'pending')
+              .reduce((sum, p) => sum + parseFloat(p.amount_paid), 0);
+
+            return (
+              <>
+                <div className="glass-card border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                    <DollarSign className="w-6 h-6 text-emerald-400" />
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Today's Revenue</p>
+                    <p className="text-2xl font-black text-white">₹{todayRevenue}</p>
+                  </div>
+                </div>
+                <div className="glass-card border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#3390ec]/10 flex items-center justify-center border border-[#3390ec]/20">
+                    <TrendingUp className="w-6 h-6 text-[#3390ec]" />
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">This Month</p>
+                    <p className="text-2xl font-black text-white">₹{monthRevenue}</p>
+                  </div>
+                </div>
+                <div className="glass-card border border-white/5 rounded-2xl p-5 flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20">
+                    <Clock className="w-6 h-6 text-amber-400" />
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-[10px] font-bold uppercase tracking-wider">Pending Dues</p>
+                    <p className="text-2xl font-black text-white">₹{pendingRevenue}</p>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </motion.div>
+      )}
+
       {/* Filters and Search */}
       <div className="space-y-6">
         <div className="relative group max-w-2xl">

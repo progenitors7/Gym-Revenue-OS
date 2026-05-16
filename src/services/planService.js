@@ -9,6 +9,19 @@ export const planService = {
       .order('created_at', { ascending: true });
 
     if (error) throw error;
+    
+    // Inject a Free Trial option if it's not already in the DB
+    const hasTrial = data.some(p => p.name.toLowerCase().includes('trial'));
+    if (!hasTrial) {
+      data.unshift({
+        id: 'trial_default',
+        name: 'Free Trial (3 Days)',
+        duration_days: 3,
+        price: 0,
+        gym_id: gymId
+      });
+    }
+    
     return data;
   },
 

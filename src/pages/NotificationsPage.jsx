@@ -38,6 +38,20 @@ export default function NotificationsPage() {
           bg: 'bg-amber-500/10', 
           label: 'Expiring' 
         };
+      case 'trial_ending':
+        return { 
+          icon: <Clock className="w-5 h-5" />, 
+          color: 'text-orange-500', 
+          bg: 'bg-orange-500/10', 
+          label: 'Trial Ending' 
+        };
+      case 'trial_expired':
+        return { 
+          icon: <AlertCircle className="w-5 h-5" />, 
+          color: 'text-red-500', 
+          bg: 'bg-red-500/10', 
+          label: 'Trial Expired' 
+        };
       case 'membership_expired':
         return { 
           icon: <AlertCircle className="w-5 h-5" />, 

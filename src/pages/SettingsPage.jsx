@@ -133,9 +133,37 @@ export default function SettingsPage() {
     }
   };
 
+  // Global Settings (Stored in LocalStorage)
+  const getSavedSettings = () => {
+    try {
+      if (!gym?.id) return { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
+      const saved = localStorage.getItem(`gym_settings_${gym.id}`);
+      return saved ? JSON.parse(saved) : { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
+    } catch {
+      return { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
+    }
+  };
+
+  const [globalSettings, setGlobalSettings] = useState(getSavedSettings());
+  const [savingSettings, setSavingSettings] = useState(false);
+
   useState(() => {
     fetchPlans();
+    if (gym?.id) setGlobalSettings(getSavedSettings());
   }, [gym?.id]);
+
+  const handleSaveGlobalSettings = () => {
+    if (!gym?.id) return;
+    setSavingSettings(true);
+    try {
+      localStorage.setItem(`gym_settings_${gym.id}`, JSON.stringify(globalSettings));
+      showToast('Global settings updated successfully!');
+    } catch (err) {
+      showToast('Failed to save settings', 'error');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
 
   const handleAddPlan = async () => {
     if (!newPlan.name || !newPlan.duration_days) return showToast('Please fill all fields', 'error');
@@ -358,6 +386,45 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
+          </div>
+        </Section>
+
+        {/* Global Settings */}
+        <Section 
+          icon={<SettingsIcon className="w-5 h-5" />}
+          title="Global Settings" 
+          description="Platform preferences for your gym"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 px-1">Currency Symbol</label>
+              <select
+                value={globalSettings.currency}
+                onChange={e => setGlobalSettings({...globalSettings, currency: e.target.value})}
+                className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all appearance-none"
+              >
+                <option value="₹">₹ (INR)</option>
+                <option value="$">$ (USD)</option>
+                <option value="€">€ (EUR)</option>
+                <option value="£">£ (GBP)</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 px-1">WhatsApp Template</label>
+              <textarea
+                rows={3}
+                value={globalSettings.waTemplate}
+                onChange={e => setGlobalSettings({...globalSettings, waTemplate: e.target.value})}
+                className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#3390ec]/50 transition-all resize-none"
+                placeholder="Hello {{name}}, your plan expires on {{date}}."
+              />
+              <p className="text-[10px] text-gray-500 px-1">Available variables: {'{{name}}'}, {'{{date}}'}, {'{{plan}}'}</p>
+            </div>
+          </div>
+          <div className="pt-2">
+            <button onClick={handleSaveGlobalSettings} disabled={savingSettings} className="px-6 py-2 bg-[#3390ec] hover:bg-[#2b7ad2] disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-all">
+              {savingSettings ? 'Saving...' : 'Save Settings'}
+            </button>
           </div>
         </Section>
 

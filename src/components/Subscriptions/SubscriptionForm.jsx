@@ -59,7 +59,26 @@ export default function SubscriptionForm({ onSubmit, initialData = null, isSubmi
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      
+      // Auto-fill if member is selected
+      if (name === 'member_id') {
+        const member = members.find(m => m.id === value);
+        if (member && member.membership_plan) {
+          next.plan_name = member.membership_plan;
+          const matchedPlan = plans.find(p => p.name === member.membership_plan);
+          if (matchedPlan) {
+            next.amount = matchedPlan.price;
+            next.duration_type = 'custom'; // Custom since we use dynamic days
+            const date = new Date(next.start_date);
+            date.setDate(date.getDate() + matchedPlan.duration_days);
+            next.expiry_date = date.toISOString().split('T')[0];
+          }
+        }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = (e) => {

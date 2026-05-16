@@ -47,7 +47,26 @@ export default function SubscriptionsPage() {
     fetchSubscriptions();
   }, [fetchSubscriptions]);
 
-  const filteredSubscriptions = subscriptions.filter(sub => {
+  // Consolidate subscriptions: keep only the latest (by expiry_date) per member
+  const consolidatedSubscriptions = Object.values(
+    subscriptions.reduce((acc, sub) => {
+      const memberId = sub.member_id || sub.members?.id;
+      if (!memberId) return acc;
+      
+      if (!acc[memberId]) {
+        acc[memberId] = sub;
+      } else {
+        const currentExpiry = new Date(acc[memberId].expiry_date).getTime();
+        const newExpiry = new Date(sub.expiry_date).getTime();
+        if (newExpiry > currentExpiry) {
+          acc[memberId] = sub;
+        }
+      }
+      return acc;
+    }, {})
+  ).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+  const filteredSubscriptions = consolidatedSubscriptions.filter(sub => {
     const matchesSearch = sub.members?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
                           sub.plan_name?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
@@ -72,7 +91,7 @@ export default function SubscriptionsPage() {
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Active Plans</h1>
           <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">
-            {loading ? 'Verifying plans…' : `${subscriptions.length} active plans tracking`}
+            {loading ? 'Verifying plans…' : `${consolidatedSubscriptions.length} active plans tracking`}
           </p>
         </div>
         <button
