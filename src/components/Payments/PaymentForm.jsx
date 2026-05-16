@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Receipt, CreditCard, Calendar, FileText } from 'lucide-react';
+import { User, Receipt, CreditCard, Calendar, FileText, Sparkles } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 import DatePicker from '../UI/DatePicker';

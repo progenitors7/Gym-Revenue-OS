@@ -8,7 +8,7 @@
  *  - mode: 'add' | 'edit'
  */
 import { useState, useEffect } from 'react'
-import { User, Phone, Activity, Award, Calendar, FileText, CreditCard } from 'lucide-react'
+import { User, Phone, Activity, Award, Calendar, FileText, CreditCard, Sparkles } from 'lucide-react'
 import DatePicker from '../UI/DatePicker'
 import { unifiedService } from '../../services/unifiedService'
 import { useCurrentGym } from '../../hooks/useCurrentGym'
