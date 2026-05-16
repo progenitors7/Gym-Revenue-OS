@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -116,6 +116,9 @@ export default function SettingsPage() {
   const [showAddPlan, setShowAddPlan] = useState(false);
   const [newPlan, setNewPlan] = useState({ name: '', duration_days: 30, price: 0 });
 
+  // Toast state
+  const [toast, setToast] = useState({ message: '', type: 'success' });
+
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: '', type: 'success' }), 4000);
@@ -164,7 +167,8 @@ export default function SettingsPage() {
   const [globalSettings, setGlobalSettings] = useState(getSavedSettings());
   const [savingSettings, setSavingSettings] = useState(false);
 
-  useState(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
     fetchPlans();
     if (gym?.id) setGlobalSettings(getSavedSettings());
   }, [gym?.id]);
