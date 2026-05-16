@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   Settings as SettingsIcon, 
   User, 
@@ -85,8 +85,9 @@ function Toast({ message, type, onClose }) {
 
 export default function SettingsPage() {
   const { user, signIn, signOut, updatePassword, resetPasswordForEmail } = useAuth();
-  const { gym, gymName, updateGymName, ownerEmail } = useCurrentGym();
+  const { gym, gymName, gymLoading, updateGymName, ownerEmail } = useCurrentGym();
   const navigate = useNavigate();
+  const gymId = gym?.id ?? null;
 
   // Gym profile state
   const [newGymName, setNewGymName] = useState(gymName || '');
@@ -140,38 +141,32 @@ export default function SettingsPage() {
   }
 
   // Load plans
-  const fetchPlans = async () => {
-    if (!gym?.id) return;
+  const fetchPlans = useCallback(async () => {
+    if (!gymId) return;
     setLoadingPlans(true);
     try {
-      const data = await planService.getPlans(gym.id);
+      const data = await planService.getPlans(gymId);
       setPlans(data);
     } catch (err) {
       console.error('Failed to fetch plans:', err);
     } finally {
       setLoadingPlans(false);
     }
-  };
+  }, [gymId]);
 
   // Global Settings (Stored in LocalStorage)
-  const getSavedSettings = () => {
-    try {
-      if (!gym?.id) return { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
-      const saved = localStorage.getItem(`gym_settings_${gym.id}`);
-      return saved ? JSON.parse(saved) : { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
-    } catch {
-      return { currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' };
-    }
-  };
-
-  const [globalSettings, setGlobalSettings] = useState(getSavedSettings());
+  const [globalSettings, setGlobalSettings] = useState({ currency: '₹', waTemplate: 'Hello {{name}}, your plan expires on {{date}}.' });
   const [savingSettings, setSavingSettings] = useState(false);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchPlans();
-    if (gym?.id) setGlobalSettings(getSavedSettings());
-  }, [gym?.id]);
+    if (gymId) {
+      try {
+        const saved = localStorage.getItem(`gym_settings_${gymId}`);
+        if (saved) setGlobalSettings(JSON.parse(saved));
+      } catch { /* ignore */ }
+    }
+  }, [gymId, fetchPlans]);
 
   const handleSaveGlobalSettings = () => {
     if (!gym?.id) return;
@@ -322,6 +317,12 @@ export default function SettingsPage() {
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto space-y-6">
+      {gymLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="w-8 h-8 border-2 border-white/10 border-t-[#3390ec] rounded-full animate-spin" />
+        </div>
+      )}
+      {!gymLoading && (
       <Toast message={toast.message} type={toast.type} onClose={() => setToast({ message: '', type: 'success' })} />
 
       {/* Header */}
@@ -629,6 +630,7 @@ export default function SettingsPage() {
           </button>
         </div>
       </div>
+      )}
     </div>
   );
 }
