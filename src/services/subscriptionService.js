@@ -5,6 +5,8 @@ const formatDate = (date) => {
   return new Date(date).toISOString().split('T')[0];
 };
 
+const AUTO_DURATION_TYPES = new Set(['monthly', 'quarterly', 'yearly']);
+
 export const subscriptionService = {
   // Get all subscriptions for the current gym (RLS handles filtering by gym)
   async getAllSubscriptions() {
@@ -72,7 +74,7 @@ export const subscriptionService = {
   async createSubscription(gymId, subscriptionData) {
     // Determine expiry date if not custom
     let expiry_date = subscriptionData.expiry_date;
-    if (subscriptionData.duration_type !== 'custom') {
+    if (AUTO_DURATION_TYPES.has(subscriptionData.duration_type)) {
         expiry_date = this.calculateExpiryDate(subscriptionData.start_date, subscriptionData.duration_type);
     }
 
@@ -100,7 +102,7 @@ export const subscriptionService = {
   async updateSubscription(id, subscriptionData) {
      let updatePayload = { ...subscriptionData };
 
-     if (updatePayload.duration_type && updatePayload.start_date && updatePayload.duration_type !== 'custom') {
+     if (updatePayload.duration_type && updatePayload.start_date && AUTO_DURATION_TYPES.has(updatePayload.duration_type)) {
         updatePayload.expiry_date = this.calculateExpiryDate(updatePayload.start_date, updatePayload.duration_type);
      }
 

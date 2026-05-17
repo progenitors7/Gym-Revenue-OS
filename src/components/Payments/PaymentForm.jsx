@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Receipt, CreditCard, Calendar, FileText, Sparkles } from 'lucide-react';
+import { User, Receipt, CreditCard, FileText, Sparkles } from 'lucide-react';
 import { useMembers } from '../../hooks/useMembers';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
 import DatePicker from '../UI/DatePicker';
 import { motion, AnimatePresence } from 'framer-motion';
-import { unifiedService } from '../../services/unifiedService';
 import { useCurrentGym } from '../../hooks/useCurrentGym';
 
 import { planService } from '../../services/planService';
+
+const durationTypeFromDays = (days) => {
+  if (Number(days) === 30) return 'monthly';
+  if (Number(days) === 90) return 'quarterly';
+  if (Number(days) === 365) return 'yearly';
+  return 'custom';
+};
 
 export default function PaymentForm({ onSubmit, initialData = null, isSubmitting = false }) {
   const navigate = useNavigate();
@@ -64,8 +70,10 @@ export default function PaymentForm({ onSubmit, initialData = null, isSubmitting
     if (shouldRenew && selectedPlan) {
       data.smart_renew = {
         plan_name: selectedPlan.name,
-        duration_type: selectedPlan.name.toLowerCase(),
-        amount: parseFloat(formData.amount_paid)
+        duration_type: durationTypeFromDays(selectedPlan.duration_days),
+        duration_days: selectedPlan.duration_days,
+        amount: parseFloat(formData.amount_paid),
+        start_date: formData.payment_date
       };
     }
     onSubmit(data);

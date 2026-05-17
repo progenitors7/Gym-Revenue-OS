@@ -24,6 +24,7 @@ export default function AddPaymentPage() {
           formData.smart_renew,
           {
             amount_paid: formData.amount_paid,
+            payment_date: formData.payment_date,
             payment_method: formData.payment_method,
             payment_status: formData.payment_status,
             notes: formData.notes

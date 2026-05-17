@@ -3,10 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Zap, Sparkles } from 'lucide-react';
 import SubscriptionForm from './SubscriptionForm';
 import { useSubscriptions } from '../../hooks/useSubscriptions';
+import { unifiedService } from '../../services/unifiedService';
+import { useCurrentGym } from '../../hooks/useCurrentGym';
 
 export default function AddSubscriptionPage() {
   const navigate = useNavigate();
-  const { addSubscription, error } = useSubscriptions();
+  const { error } = useSubscriptions();
+  const { gym } = useCurrentGym();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
@@ -14,7 +17,26 @@ export default function AddSubscriptionPage() {
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      await addSubscription(formData);
+      if (!gym?.id) throw new Error('Gym not loaded');
+
+      await unifiedService.smartRenew(
+        gym.id,
+        formData.member_id,
+        {
+          plan_name: formData.plan_name,
+          duration_type: formData.duration_type,
+          amount: Number(formData.amount) || 0,
+          start_date: formData.start_date,
+          expiry_date: formData.expiry_date
+        },
+        {
+          amount_paid: Number(formData.amount) || 0,
+          payment_date: formData.start_date,
+          payment_method: 'cash',
+          payment_status: 'paid',
+          notes: `Subscription payment for ${formData.plan_name}`
+        }
+      );
       navigate('/subscriptions');
     } catch (err) {
       setSubmitError(err.message);

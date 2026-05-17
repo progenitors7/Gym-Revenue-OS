@@ -1,7 +1,42 @@
-import { supabase } from '../lib/supabaseClient';
 import { subscriptionService } from './subscriptionService';
 import { paymentService } from './paymentService';
 import { updateMember } from './memberService';
+
+const today = () => new Date().toISOString().split('T')[0];
+
+const addDays = (dateString, days) => {
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return null;
+  date.setDate(date.getDate() + Number(days));
+  return date.toISOString().split('T')[0];
+};
+
+const getStatusFromExpiry = (expiryDate) => {
+  if (!expiryDate) return 'active';
+
+  const current = new Date(today());
+  const expiry = new Date(expiryDate);
+  const daysLeft = Math.ceil((expiry - current) / (1000 * 60 * 60 * 24));
+
+  if (daysLeft < 0) return 'expired';
+  if (daysLeft <= 7) return 'expiring_soon';
+  return 'active';
+};
+
+const resolveRenewalDates = (planData, paymentData) => {
+  const startDate = planData.start_date || paymentData?.payment_date || today();
+  let expiryDate = planData.expiry_date;
+
+  if (!expiryDate && planData.duration_days) {
+    expiryDate = addDays(startDate, planData.duration_days);
+  }
+
+  if (!expiryDate && planData.duration_type && planData.duration_type !== 'custom') {
+    expiryDate = subscriptionService.calculateExpiryDate(startDate, planData.duration_type);
+  }
+
+  return { startDate, expiryDate };
+};
 
 /**
  * Unified service for handling "Smart Actions" that involve multiple tables.
@@ -13,25 +48,31 @@ export const unifiedService = {
    */
   async smartRenew(gymId, memberId, planData, paymentData) {
     try {
+      const { startDate, expiryDate } = resolveRenewalDates(planData, paymentData);
+
+      if (!expiryDate) {
+        throw new Error('Could not calculate subscription expiry date.');
+      }
+
       // 1. Create Subscription
       // The DB trigger 'update_member_from_sub_trigger' will automatically 
       // update members.expiry_date and members.membership_plan.
       const subscription = await subscriptionService.createSubscription(gymId, {
         member_id: memberId,
         plan_name: planData.plan_name,
-        duration_type: planData.duration_type,
+        duration_type: planData.duration_type || 'custom',
         amount: planData.amount,
-        start_date: planData.start_date || new Date().toISOString().split('T')[0],
-        expiry_date: planData.expiry_date // Will be calculated by service if not provided
+        start_date: startDate,
+        expiry_date: expiryDate
       });
 
       // 2. Create Payment (linked to the new subscription)
-      if (paymentData && paymentData.amount_paid > 0) {
+      if (paymentData && Number(paymentData.amount_paid) > 0) {
         await paymentService.createPayment(gymId, {
           member_id: memberId,
           subscription_id: subscription.id,
           amount_paid: paymentData.amount_paid,
-          payment_date: paymentData.payment_date || new Date().toISOString().split('T')[0],
+          payment_date: paymentData.payment_date || startDate,
           payment_method: paymentData.payment_method || 'cash',
           payment_status: paymentData.payment_status || 'paid',
           notes: paymentData.notes || `Smart renewal for ${planData.plan_name}`
@@ -41,9 +82,9 @@ export const unifiedService = {
       // 3. Force Update Member (Safety Sync)
       // Although DB triggers exist, we force a sync here to ensure UI is immediate.
       await updateMember(memberId, {
-        expiry_date: planData.expiry_date,
+        expiry_date: expiryDate,
         membership_plan: planData.plan_name,
-        status: 'active' // Immediately mark as active
+        status: getStatusFromExpiry(expiryDate)
       });
 
       return { success: true, subscription };
@@ -65,7 +106,7 @@ export const unifiedService = {
       const subscription = await subscriptionService.createSubscription(gymId, {
         member_id: member.id,
         plan_name: member.membership_plan,
-        duration_type: 'monthly', // Default or guess based on plan name
+        duration_type: 'custom',
         amount: 0, // We don't know the amount here, but we record the intent
         start_date: member.join_date,
         expiry_date: member.expiry_date
