@@ -5,6 +5,36 @@
  */
 import { supabase } from '../lib/supabaseClient'
 
+function addMonths(dateString, months) {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) return null
+  date.setMonth(date.getMonth() + Number(months || 0))
+  return date.toISOString()
+}
+
+function enrichBillingState(gym, latestSubscription) {
+  if (!gym) return gym
+
+  const expiresAt = latestSubscription?.created_at && latestSubscription?.duration_months
+    ? addMonths(latestSubscription.created_at, latestSubscription.duration_months)
+    : null
+
+  const daysLeft = expiresAt
+    ? Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24))
+    : null
+
+  const isExpired = daysLeft !== null && daysLeft < 0
+  const billingStatus = isExpired ? 'expired' : (gym.status || 'pending')
+
+  return {
+    ...gym,
+    latest_saas_subscription: latestSubscription || null,
+    subscription_expires_at: expiresAt,
+    billing_days_left: daysLeft,
+    billing_status: billingStatus,
+  }
+}
+
 /**
  * Fetch the gym belonging to the currently authenticated user.
  * Returns null if none exists yet.
@@ -14,7 +44,7 @@ export async function getMyGym(userId) {
 
   const { data, error } = await supabase
     .from('gyms')
-    .select('id, gym_name, owner_user_id, created_at')
+    .select('*, saas_plans(*)')
     .eq('owner_user_id', userId)
     .maybeSingle()
 
@@ -22,8 +52,23 @@ export async function getMyGym(userId) {
     console.error('DEBUG: getMyGym error:', error)
     throw error
   }
-  
-  return data
+
+  if (!data) return null
+
+  const { data: latestSubscription, error: subscriptionError } = await supabase
+    .from('saas_subscriptions')
+    .select('*')
+    .eq('gym_id', data.id)
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (subscriptionError) {
+    console.warn('DEBUG: latest SaaS subscription unavailable:', subscriptionError.message)
+  }
+
+  return enrichBillingState(data, latestSubscription)
 }
 
 /**

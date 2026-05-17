@@ -9,6 +9,54 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+const ALLOWED_DURATIONS = new Set([1, 3, 6, 12])
+const DEFAULT_PLAN_ID = '770f855a-535c-44f1-9604-0ba7a74c6f59'
+const DURATION_PRICES = new Map([
+  [1, 499],
+  [3, 1349],
+  [6, 2399],
+  [12, 4199],
+])
+
+function calculateDiscountedAmount(baseAmount: number, promo: Record<string, unknown> | null) {
+  if (!promo) return Math.round(baseAmount)
+
+  if (promo.discount_type === 'full_free') return 0
+  if (promo.discount_type === 'percentage') {
+    return Math.round(baseAmount * (1 - Number(promo.discount_value || 0) / 100))
+  }
+  if (promo.discount_type === 'fixed') {
+    return Math.max(0, Math.round(baseAmount - Number(promo.discount_value || 0)))
+  }
+
+  return Math.round(baseAmount)
+}
+
+async function getValidPromo(supabaseClient, promoId?: string | null) {
+  if (!promoId) return null
+
+  const { data: promo, error } = await supabaseClient
+    .from('promo_codes')
+    .select('*')
+    .eq('id', promoId)
+    .eq('is_active', true)
+    .single()
+
+  if (error || !promo) {
+    throw new Error('Invalid or expired promo code')
+  }
+
+  if (Number(promo.used_count || 0) >= Number(promo.max_uses || 0)) {
+    throw new Error('This promo code has reached its usage limit')
+  }
+
+  if (promo.expiry_date && new Date(promo.expiry_date) < new Date()) {
+    throw new Error('This promo code has expired')
+  }
+
+  return promo
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -36,13 +84,101 @@ serve(async (req: Request) => {
       })
     }
 
-    console.log(`EDGE_FUNCTION_LOG: Keys detected. ID starts with ${RAZORPAY_KEY_ID.substring(0, 4)}... and Secret starts with ${RAZORPAY_SECRET.substring(0, 4)}...`)
+    console.log('EDGE_FUNCTION_LOG: Razorpay keys detected.')
 
     // Initialize Supabase Client
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
+
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) {
+      throw new Error('User not authenticated')
+    }
+
+    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''))
+    if (userError || !user) {
+      console.error('EDGE_FUNCTION_ERROR: Auth failed', userError)
+      throw new Error('User not authenticated')
+    }
+
+    const { data: gym, error: gymFetchError } = await supabaseClient
+      .from('gyms')
+      .select('id')
+      .eq('owner_user_id', user.id)
+      .single()
+
+    if (gymFetchError || !gym) {
+      console.error('EDGE_FUNCTION_ERROR: Gym not found', gymFetchError)
+      throw new Error('Gym not found for this user')
+    }
+
+    const selectedDuration = Number(durationMonths)
+    const selectedAmount = Number(amount)
+
+    if (action === 'create-order') {
+      if (!ALLOWED_DURATIONS.has(selectedDuration)) {
+        throw new Error('Invalid subscription duration')
+      }
+
+      const promo = await getValidPromo(supabaseClient, promoId)
+      const baseAmount = DURATION_PRICES.get(selectedDuration)
+      const expectedAmount = calculateDiscountedAmount(baseAmount, promo)
+
+      if (!Number.isFinite(selectedAmount) || selectedAmount !== expectedAmount || selectedAmount <= 0) {
+        throw new Error('Invalid payment amount')
+      }
+    }
+
+    if (action === 'redeem-promo') {
+      if (!ALLOWED_DURATIONS.has(selectedDuration)) {
+        throw new Error('Invalid subscription duration')
+      }
+
+      const promo = await getValidPromo(supabaseClient, promoId)
+      if (!promo || promo.discount_type !== 'full_free') {
+        throw new Error('This promo code is not valid for free activation')
+      }
+
+      const { error: updateError } = await supabaseClient
+        .from('gyms')
+        .update({
+          status: 'active',
+          saas_plan_id: planId || DEFAULT_PLAN_ID
+        })
+        .eq('id', gym.id)
+
+      if (updateError) {
+        console.error('EDGE_FUNCTION_ERROR: Promo gym update failed', updateError)
+        throw new Error('Failed to activate promo subscription')
+      }
+
+      const { error: insertError } = await supabaseClient
+        .from('saas_subscriptions')
+        .insert([{
+          gym_id: gym.id,
+          plan_id: planId || DEFAULT_PLAN_ID,
+          amount: 0,
+          currency: 'INR',
+          status: 'active',
+          payment_status: 'captured',
+          duration_months: selectedDuration,
+          promo_id: promo.id
+        }])
+
+      if (insertError) {
+        console.error('EDGE_FUNCTION_ERROR: Promo subscription insert failed', insertError)
+        throw new Error('Failed to log promo subscription')
+      }
+
+      await supabaseClient.rpc('increment_promo_usage', { promo_id: promo.id })
+
+      return new Response(JSON.stringify({ success: true }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
 
     // Action: Create Order
     if (action === 'create-order') {
@@ -54,13 +190,14 @@ serve(async (req: Request) => {
           'Authorization': 'Basic ' + btoa(RAZORPAY_KEY_ID + ':' + RAZORPAY_SECRET)
         },
         body: JSON.stringify({
-          amount: Math.round(amount * 100), // Razorpay expects paise
+          amount: Math.round(selectedAmount * 100), // Razorpay expects paise
           currency: 'INR',
           receipt: `receipt_${Date.now()}`,
           notes: {
-            durationMonths,
+            gymId: gym.id,
+            durationMonths: selectedDuration,
             promoId,
-            planId
+            planId: planId || DEFAULT_PLAN_ID
           }
         })
       })
@@ -121,25 +258,17 @@ serve(async (req: Request) => {
         }
       })
       const orderDetails = await orderRes.json()
+      const orderGymId = orderDetails.notes?.gymId
+      const orderPlanId = orderDetails.notes?.planId || DEFAULT_PLAN_ID
+      const orderDuration = Number(orderDetails.notes?.durationMonths)
 
-      // Update Gym and Create Subscription record
-      const authHeader = req.headers.get('Authorization')!
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser(authHeader.replace('Bearer ', ''))
-      
-      if (userError || !user) {
-        console.error('EDGE_FUNCTION_ERROR: Auth failed', userError)
-        throw new Error('User not authenticated')
+      if (orderGymId && orderGymId !== gym.id) {
+        console.error('EDGE_FUNCTION_ERROR: Order gym mismatch', { orderGymId, gymId: gym.id })
+        throw new Error('Payment order does not belong to this gym')
       }
 
-      const { data: gym, error: gymFetchError } = await supabaseClient
-        .from('gyms')
-        .select('id')
-        .eq('owner_email', user.email)
-        .single()
-
-      if (gymFetchError) {
-        console.error('EDGE_FUNCTION_ERROR: Gym not found', gymFetchError)
-        throw new Error('Gym not found for this user')
+      if (!ALLOWED_DURATIONS.has(orderDuration)) {
+        throw new Error('Invalid subscription duration on order')
       }
 
       // Update Gym Status
@@ -147,7 +276,7 @@ serve(async (req: Request) => {
         .from('gyms')
         .update({ 
           status: 'active',
-          saas_plan_id: planId || '770f855a-535c-44f1-9604-0ba7a74c6f59'
+          saas_plan_id: orderPlanId
         })
         .eq('id', gym.id)
 
@@ -161,7 +290,7 @@ serve(async (req: Request) => {
         .from('saas_subscriptions')
         .insert([{
           gym_id: gym.id,
-          plan_id: planId || '770f855a-535c-44f1-9604-0ba7a74c6f59',
+          plan_id: orderPlanId,
           razorpay_order_id,
           razorpay_payment_id,
           razorpay_signature,
@@ -169,7 +298,7 @@ serve(async (req: Request) => {
           currency: 'INR',
           status: 'active',
           payment_status: 'captured',
-          duration_months: orderDetails.notes?.durationMonths,
+          duration_months: orderDuration,
           promo_id: orderDetails.notes?.promoId
         }])
 

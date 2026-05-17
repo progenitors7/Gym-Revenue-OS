@@ -22,12 +22,13 @@ export default function ProtectedRoute({ children }) {
     return <Navigate to="/" replace />
   }
 
-  // Subscription Paywall: Redirect to billing if gym is pending
+  // Subscription Paywall: Redirect to billing if gym is pending or expired.
   // Allow access to /billing page itself and /super-admin
   const isBillingPage = location.pathname === '/billing'
   const isSuperAdmin = location.pathname.startsWith('/super-admin')
+  const requiresBilling = gym?.status === 'pending' || gym?.billing_status === 'expired'
   
-  if (gym?.status === 'pending' && !isBillingPage && !isSuperAdmin) {
+  if (requiresBilling && !isBillingPage && !isSuperAdmin) {
     return <Navigate to="/billing" replace />
   }
 

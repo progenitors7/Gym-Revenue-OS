@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { 
   CreditCard, 
   CheckCircle2, 
   Zap, 
   Star,
-  ArrowRight,
   RefreshCw,
-  AlertCircle,
   Ticket,
   Clock,
   Gift
 } from 'lucide-react';
 import { useCurrentGym } from '../hooks/useCurrentGym';
-import { superAdminService } from '../services/superAdminService';
 import { supabase } from '../lib/supabaseClient';
 import { razorpayService } from '../services/razorpayService';
+
+const PRO_PLAN_ID = '770f855a-535c-44f1-9604-0ba7a74c6f59';
+const BILLING_FUNCTION = 'razorpay-subscription';
+const FREE_PROMO_DURATION_MONTHS = 3;
 
 const DURATIONS = [
   { months: 1, label: '1 Month', price: 499, discount: 0 },
@@ -24,9 +25,7 @@ const DURATIONS = [
 ];
 
 export default function BillingPage() {
-  const { gym, isReady } = useCurrentGym();
-  const [loading, setLoading] = useState(true);
-  const [currentPlan, setCurrentPlan] = useState(null);
+  const { gym, isReady, refreshGym } = useCurrentGym();
   const [processing, setProcessing] = useState(false);
   
   // Selection State
@@ -35,32 +34,6 @@ export default function BillingPage() {
   const [appliedPromo, setAppliedPromo] = useState(null);
   const [promoError, setPromoError] = useState('');
   const [verifyingPromo, setVerifyingPromo] = useState(false);
-
-  useEffect(() => {
-    if (isReady) {
-      fetchData();
-    }
-  }, [isReady, gym?.saas_plan_id]);
-
-  async function fetchData() {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('gyms')
-        .select('*, saas_plans(*)')
-        .eq('id', gym?.id)
-        .single();
-      
-      if (error) throw error;
-      if (data?.saas_plans) {
-        setCurrentPlan(data.saas_plans);
-      }
-    } catch (err) {
-      console.error('Error fetching billing data:', err);
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const handleVerifyPromo = async () => {
     if (!promoCode) return;
@@ -94,8 +67,12 @@ export default function BillingPage() {
       }
 
       setAppliedPromo(data);
+      if (data.discount_type === 'full_free') {
+        const freeDuration = DURATIONS.find((duration) => duration.months === FREE_PROMO_DURATION_MONTHS);
+        if (freeDuration) setSelectedDuration(freeDuration);
+      }
       setPromoError('');
-    } catch (err) {
+    } catch {
       setPromoError('Error verifying code');
     } finally {
       setVerifyingPromo(false);
@@ -124,35 +101,24 @@ export default function BillingPage() {
 
       // Handle 100% Discount / Offline Payment logic
       if (finalAmount === 0) {
-        const { error: gymUpdateError } = await supabase
-          .from('gyms')
-          .update({ 
-            status: 'active',
-            saas_plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Professional Plan (We can make this dynamic if needed)
-          })
-          .eq('id', gym.id);
-        
-        if (gymUpdateError) throw gymUpdateError;
-
-        // Create a record in saas_subscriptions for tracking
-        await supabase
-          .from('saas_subscriptions')
-          .insert([{
-            gym_id: gym.id,
-            plan_id: '770f855a-535c-44f1-9604-0ba7a74c6f59',
-            amount: 0,
-            status: 'active',
-            payment_status: 'captured',
-            duration_months: selectedDuration.months,
-            promo_id: appliedPromo?.id
-          }]);
-
-        // If promo code used, increment used_count
-        if (appliedPromo) {
-          await supabase.rpc('increment_promo_usage', { promo_id: appliedPromo.id });
+        if (!appliedPromo) throw new Error('A valid promo code is required for free activation.');
+        if (appliedPromo.discount_type !== 'full_free') {
+          throw new Error('Only 3-month free promo codes can activate a free subscription.');
         }
 
-        alert('Subscription activated successfully via Promo Code!');
+        const { error: redeemError } = await supabase.functions.invoke(BILLING_FUNCTION, {
+          body: {
+            action: 'redeem-promo',
+            promoId: appliedPromo.id,
+            durationMonths: FREE_PROMO_DURATION_MONTHS,
+            planId: PRO_PLAN_ID
+          }
+        });
+
+        if (redeemError) throw redeemError;
+
+        alert('3 months free subscription activated successfully!');
+        await refreshGym();
         window.location.reload();
         return;
       }
@@ -162,12 +128,13 @@ export default function BillingPage() {
       if (!isLoaded) throw new Error('Razorpay SDK failed to load');
 
       // Create Order
-      const { data, error } = await supabase.functions.invoke('razorpay-subscription-v2', {
+      const { data, error } = await supabase.functions.invoke(BILLING_FUNCTION, {
         body: { 
           action: 'create-order', 
           amount: finalAmount,
           durationMonths: selectedDuration.months,
-          planId: '770f855a-535c-44f1-9604-0ba7a74c6f59' // Dynamic Plan ID
+          planId: PRO_PLAN_ID,
+          promoId: appliedPromo?.id
         }
       });
 
@@ -201,7 +168,7 @@ export default function BillingPage() {
         },
         handler: async (response) => {
           // Verify Payment
-          const { error: verifyErr } = await supabase.functions.invoke('razorpay-subscription-v2', {
+          const { error: verifyErr } = await supabase.functions.invoke(BILLING_FUNCTION, {
             body: { 
               action: 'verify-payment', 
               paymentData: response,
@@ -211,6 +178,7 @@ export default function BillingPage() {
 
           if (verifyErr) throw verifyErr;
           alert('Payment successful! Subscription active.');
+          await refreshGym();
           window.location.reload();
         }
       };
@@ -226,7 +194,7 @@ export default function BillingPage() {
     }
   };
 
-  if (loading) {
+  if (!isReady) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="flex flex-col items-center gap-4">
@@ -238,6 +206,9 @@ export default function BillingPage() {
   }
 
   const finalAmount = calculateFinalAmount();
+  const expiryDate = gym?.subscription_expires_at ? new Date(gym.subscription_expires_at) : null;
+  const isExpired = gym?.billing_status === 'expired';
+  const isExpiringSoon = Number.isFinite(gym?.billing_days_left) && gym.billing_days_left >= 0 && gym.billing_days_left <= 7;
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700">
@@ -253,6 +224,20 @@ export default function BillingPage() {
           Unlock unlimited potential. One plan, everything included. 
           Choose a duration and start growing your fitness empire.
         </p>
+        {(expiryDate || isExpired) && (
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest ${
+            isExpired
+              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              : isExpiringSoon
+                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+            <Clock className="w-3.5 h-3.5" />
+            {isExpired
+              ? 'Your plan has expired. Renew to continue.'
+              : `Current access valid until ${expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

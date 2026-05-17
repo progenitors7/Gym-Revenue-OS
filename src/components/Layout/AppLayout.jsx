@@ -247,6 +247,12 @@ function BottomNav() {
 export default function AppLayout({ children }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false)
   const location = useLocation()
+  const { gym } = useGym()
+  const showBillingReminder =
+    location.pathname !== '/billing' &&
+    Number.isFinite(gym?.billing_days_left) &&
+    gym.billing_days_left >= 0 &&
+    gym.billing_days_left <= 7
 
   // Close sidebar on route change on mobile
   useEffect(() => {
@@ -305,6 +311,24 @@ export default function AppLayout({ children }) {
         {/* Page content with smooth route transition wrapper */}
         <main className="flex-1 overflow-y-auto pb-20 lg:pb-0 scroll-smooth">
           <BroadcastBanner />
+          {showBillingReminder && (
+            <div className="mx-4 sm:mx-6 lg:mx-8 mt-4 rounded-2xl border border-amber-400/20 bg-amber-400/10 px-5 py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-amber-400/10 border border-amber-400/20 flex items-center justify-center text-amber-400">
+                  <CreditCard className="w-4 h-4" />
+                </div>
+                <p className="text-amber-100 text-xs font-bold">
+                  Your Gym OS plan expires in {gym.billing_days_left} day{gym.billing_days_left === 1 ? '' : 's'}.
+                </p>
+              </div>
+              <Link
+                to="/billing"
+                className="px-4 py-2 rounded-xl bg-amber-400 text-black text-[10px] font-black uppercase tracking-widest text-center"
+              >
+                Renew
+              </Link>
+            </div>
+          )}
           <AnimatePresence mode="wait">
             <motion.div
               key={location.pathname}
@@ -324,4 +348,3 @@ export default function AppLayout({ children }) {
     </div>
   )
 }
-

@@ -1,17 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Ticket, 
   Plus, 
   Trash2, 
   Calendar, 
   Users as UsersIcon,
-  CheckCircle2,
-  AlertCircle,
   Copy,
   Search
 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 import DatePicker from '../UI/DatePicker';
+
+const isCodeUsable = (code) => {
+  const usageLeft = Number(code.used_count || 0) < Number(code.max_uses || 0);
+  const today = new Date(new Date().toISOString().split('T')[0]);
+  const dateValid = !code.expiry_date || new Date(code.expiry_date) >= today;
+  return code.is_active && usageLeft && dateValid;
+};
 
 export default function PromoCodeManager() {
   const [codes, setCodes] = useState([]);
@@ -52,12 +57,14 @@ export default function PromoCodeManager() {
   const handleCreateCode = async (e) => {
     e.preventDefault();
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('promo_codes')
         .insert([{
           ...newCode,
           code: newCode.code.toUpperCase(),
-          discount_value: newCode.discount_type === 'full_free' ? 100 : newCode.discount_value
+          discount_value: newCode.discount_type === 'full_free' ? 100 : Number(newCode.discount_value || 0),
+          max_uses: Number(newCode.max_uses || 1),
+          expiry_date: newCode.expiry_date || null
         }]);
       
       if (error) throw error;
@@ -86,7 +93,7 @@ export default function PromoCodeManager() {
       
       if (error) throw error;
       fetchCodes();
-    } catch (err) {
+    } catch {
       alert('Failed to delete code');
     }
   };
@@ -129,9 +136,9 @@ export default function PromoCodeManager() {
             <div key={code.id} className="bg-[#212121] border border-white/5 rounded-3xl p-6 relative group overflow-hidden">
               {/* Status Badge */}
               <div className={`absolute top-0 right-0 px-4 py-1 text-[8px] font-black uppercase tracking-widest rounded-bl-xl ${
-                code.is_active ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
+                isCodeUsable(code) ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'
               }`}>
-                {code.is_active ? 'Active' : 'Expired'}
+                {isCodeUsable(code) ? 'Active' : 'Inactive'}
               </div>
 
               <div className="flex items-center gap-4 mb-6">
@@ -141,7 +148,7 @@ export default function PromoCodeManager() {
                 <div>
                   <h3 className="text-xl font-black text-white tracking-tighter">{code.code}</h3>
                   <p className="text-gray-500 text-[10px] font-bold uppercase">
-                    {code.discount_type === 'full_free' ? '100% OFF (Full Free)' : 
+                    {code.discount_type === 'full_free' ? '3 Months Free SaaS' : 
                      code.discount_type === 'percentage' ? `${code.discount_value}% Discount` : 
                      `₹${code.discount_value} OFF`}
                   </p>
@@ -195,7 +202,7 @@ export default function PromoCodeManager() {
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
           <div className="bg-[#1c1c1c] border border-white/10 w-full max-w-md rounded-[2.5rem] p-8 shadow-2xl animate-in zoom-in-95 duration-300">
             <h2 className="text-2xl font-black text-white tracking-tighter uppercase italic mb-2">Generate <span className="text-[#3390ec]">Promo Code</span></h2>
-            <p className="text-gray-500 text-xs font-medium mb-8">Create discount or full-access codes for offline sales.</p>
+            <p className="text-gray-500 text-xs font-medium mb-8">Create discounts or 3-month free SaaS access codes for gym owners.</p>
 
             <form onSubmit={handleCreateCode} className="space-y-6">
               <div className="space-y-2">
@@ -218,7 +225,7 @@ export default function PromoCodeManager() {
                     onChange={(e) => setNewCode({...newCode, discount_type: e.target.value})}
                     className="w-full bg-[#212121] border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-[#3390ec]/50 transition-all text-xs font-bold"
                   >
-                    <option value="full_free">100% Free</option>
+                    <option value="full_free">3 Months Free</option>
                     <option value="percentage">Percentage</option>
                     <option value="fixed">Fixed Amount</option>
                   </select>
