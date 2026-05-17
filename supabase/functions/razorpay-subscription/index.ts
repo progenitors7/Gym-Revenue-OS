@@ -89,7 +89,7 @@ async function sendSubscriptionEmail(userEmail: string, userName: string, planNa
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
-        'Authorization': \`Bearer \${RESEND_API_KEY}\`,
+        'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
@@ -254,7 +254,7 @@ serve(async (req: Request) => {
 
       const userName = user.user_metadata?.full_name || gym.name || 'Gym Owner';
       if (user.email) {
-        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', \`\${selectedDuration} Months\`, '0 (Promo Applied)');
+        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', `${selectedDuration} Months`, '0 (Promo Applied)');
       }
 
       return new Response(JSON.stringify({ success: true }), {
@@ -422,7 +422,7 @@ serve(async (req: Request) => {
 
       const userName = user.user_metadata?.full_name || gym.name || 'Gym Owner';
       if (user.email) {
-        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', \`\${orderDuration} Months\`, (orderDetails.amount / 100).toString());
+        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', `${orderDuration} Months`, (orderDetails.amount / 100).toString());
       }
 
       console.log('EDGE_FUNCTION_LOG: Subscription finalized successfully')
