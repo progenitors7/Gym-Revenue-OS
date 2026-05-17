@@ -57,6 +57,59 @@ async function getValidPromo(supabaseClient, promoId?: string | null) {
   return promo
 }
 
+async function sendSubscriptionEmail(userEmail: string, userName: string, planName: string, duration: string, amount: string) {
+  const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
+  if (!RESEND_API_KEY) {
+    console.log('EDGE_FUNCTION_LOG: RESEND_API_KEY not found. Skipping email.');
+    return;
+  }
+  
+  const html = `
+    <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 10px; overflow: hidden;">
+      <div style="background-color: #3390ec; padding: 20px; text-align: center; color: white;">
+        <h1 style="margin: 0; font-size: 24px;">Subscription Activated!</h1>
+      </div>
+      <div style="padding: 30px; background-color: #ffffff;">
+        <p style="font-size: 16px; color: #333;">Hi ${userName},</p>
+        <p style="font-size: 16px; color: #333;">Great news! Your <strong>Gym OS ${planName}</strong> has been activated successfully.</p>
+        <div style="background-color: #f9f9f9; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 5px 0; color: #555;"><strong>Duration:</strong> ${duration}</p>
+          <p style="margin: 5px 0; color: #555;"><strong>Amount Paid:</strong> ₹${amount}</p>
+        </div>
+        <p style="font-size: 16px; color: #333;">Thank you for choosing Gym Revenue OS to grow your fitness empire. You now have access to all premium features.</p>
+        <p style="font-size: 16px; color: #333;">If you have any questions, feel free to contact our support team.</p>
+      </div>
+      <div style="background-color: #f4f4f4; padding: 15px; text-align: center; color: #888; font-size: 12px;">
+        <p style="margin: 0;">© ${new Date().getFullYear()} Gym Revenue OS. All rights reserved.</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': \`Bearer \${RESEND_API_KEY}\`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'Gym OS <onboarding@resend.dev>', // Note: Use verified domain in production
+        to: [userEmail],
+        subject: 'Your Gym OS Subscription is Active! 🚀',
+        html: html
+      })
+    });
+    
+    if (!res.ok) {
+      console.error('EDGE_FUNCTION_ERROR: Failed to send email', await res.text());
+    } else {
+      console.log('EDGE_FUNCTION_LOG: Email sent successfully to', userEmail);
+    }
+  } catch (err) {
+    console.error('EDGE_FUNCTION_ERROR: Exception sending email', err);
+  }
+}
+
 serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -105,7 +158,7 @@ serve(async (req: Request) => {
 
     const { data: gym, error: gymFetchError } = await supabaseClient
       .from('gyms')
-      .select('id')
+      .select('id, name')
       .eq('owner_user_id', user.id)
       .single()
 
@@ -154,8 +207,27 @@ serve(async (req: Request) => {
         throw new Error('Failed to activate promo subscription')
       }
 
-      const promoStart = new Date()
-      const promoEnd = new Date()
+      // Check for existing active subscription to extend
+      const { data: existingSub } = await supabaseClient
+        .from('saas_subscriptions')
+        .select('current_period_end')
+        .eq('gym_id', gym.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const now = new Date()
+      let promoStart = now
+      let promoEnd = new Date(now.getTime())
+
+      if (existingSub && existingSub.current_period_end) {
+        const currentEnd = new Date(existingSub.current_period_end)
+        if (currentEnd > now) {
+          promoStart = currentEnd
+          promoEnd = new Date(currentEnd.getTime())
+        }
+      }
       promoEnd.setMonth(promoEnd.getMonth() + selectedDuration)
 
       const { error: insertError } = await supabaseClient
@@ -179,6 +251,11 @@ serve(async (req: Request) => {
       }
 
       await supabaseClient.rpc('increment_promo_usage', { promo_id: promo.id })
+
+      const userName = user.user_metadata?.full_name || gym.name || 'Gym Owner';
+      if (user.email) {
+        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', \`\${selectedDuration} Months\`, '0 (Promo Applied)');
+      }
 
       return new Response(JSON.stringify({ success: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -292,8 +369,27 @@ serve(async (req: Request) => {
       }
 
       // Log Subscription
-      const periodStart = new Date()
-      const periodEnd = new Date()
+      // Check for existing active subscription to extend
+      const { data: existingSub } = await supabaseClient
+        .from('saas_subscriptions')
+        .select('current_period_end')
+        .eq('gym_id', gym.id)
+        .eq('status', 'active')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      const now = new Date()
+      let periodStart = now
+      let periodEnd = new Date(now.getTime())
+
+      if (existingSub && existingSub.current_period_end) {
+        const currentEnd = new Date(existingSub.current_period_end)
+        if (currentEnd > now) {
+          periodStart = currentEnd
+          periodEnd = new Date(currentEnd.getTime())
+        }
+      }
       periodEnd.setMonth(periodEnd.getMonth() + orderDuration)
 
       const { error: insertError } = await supabaseClient
@@ -322,6 +418,11 @@ serve(async (req: Request) => {
       // Increment Promo Usage if applicable
       if (orderDetails.notes?.promoId) {
         await supabaseClient.rpc('increment_promo_usage', { promo_id: orderDetails.notes.promoId })
+      }
+
+      const userName = user.user_metadata?.full_name || gym.name || 'Gym Owner';
+      if (user.email) {
+        await sendSubscriptionEmail(user.email, userName, 'Pro Plan', \`\${orderDuration} Months\`, (orderDetails.amount / 100).toString());
       }
 
       console.log('EDGE_FUNCTION_LOG: Subscription finalized successfully')

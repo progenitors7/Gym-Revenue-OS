@@ -12,6 +12,7 @@ import {
 import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
 import { razorpayService } from '../services/razorpayService';
+import toast from 'react-hot-toast';
 
 const PRO_PLAN_ID = '770f855a-535c-44f1-9604-0ba7a74c6f59';
 const BILLING_FUNCTION = 'razorpay-subscription-v2';
@@ -117,7 +118,7 @@ export default function BillingPage() {
 
         if (redeemError) throw redeemError;
 
-        alert('3 months free subscription activated successfully!');
+        toast.success('3 months free subscription activated successfully!');
         await refreshGym();
         window.location.reload();
         return;
@@ -142,7 +143,7 @@ export default function BillingPage() {
         console.error('Edge Function Error:', error);
         // Try to get the detailed error message from the response if possible
         const errorMsg = error.message || 'Failed to create payment order';
-        alert(`Billing Error: ${errorMsg}`);
+        toast.error(`Billing Error: ${errorMsg}`);
         return;
       }
 
@@ -177,7 +178,7 @@ export default function BillingPage() {
           });
 
           if (verifyErr) throw verifyErr;
-          alert('Payment successful! Subscription active.');
+          toast.success('Payment successful! Subscription active.');
           await refreshGym();
           window.location.reload();
         }
@@ -188,7 +189,7 @@ export default function BillingPage() {
 
     } catch (err) {
       console.error(err);
-      alert(err.message || 'Action failed');
+      toast.error(err.message || 'Action failed');
     } finally {
       setProcessing(false);
     }

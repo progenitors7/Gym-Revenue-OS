@@ -22,7 +22,23 @@ export function GymProvider({ children }) {
 
     try {
       console.log('[GymContext] Fetching gym for user:', targetUser.id)
-      let gymData = await getMyGym(targetUser.id)
+      let gymData
+      try {
+        gymData = await getMyGym(targetUser.id)
+      } catch (err) {
+        if (err.status === 401 || err.code === 'PGRST301') {
+          console.warn('[GymContext] Stale session or unauthorized (401/PGRST301). Attempting to refresh token...')
+          const { data: { session }, error: refreshError } = await supabase.auth.refreshSession()
+          if (!refreshError && session) {
+            console.log('[GymContext] Token refreshed successfully. Retrying fetch...')
+            gymData = await getMyGym(targetUser.id)
+          } else {
+            throw err
+          }
+        } else {
+          throw err
+        }
+      }
 
       if (!gymData) {
         console.log('[GymContext] No gym found, creating fallback for:', targetUser.email)
