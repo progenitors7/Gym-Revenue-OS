@@ -52,7 +52,7 @@ export default function QuickRenewModal({ isOpen, onClose, member, onSuccess }) 
         member.id,
         {
           plan_name: selectedPlan.name,
-          duration_type: selectedPlan.name.toLowerCase(),
+          duration_type: 'custom',
           amount: amount,
           expiry_date: expiryDate
         },
