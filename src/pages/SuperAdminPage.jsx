@@ -118,25 +118,25 @@ export default function SuperAdminPage() {
       className="p-6 sm:p-8 max-w-7xl mx-auto space-y-10"
     >
       {/* Header */}
-      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+        <div className="flex items-center gap-4 shrink-0">
           <button
             onClick={() => navigate('/dashboard')}
-            className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-slate-400 hover:text-white transition-all active:scale-95 glass-card"
+            className="p-3 rounded-xl bg-white/[0.03] border border-white/5 text-slate-400 hover:text-white transition-all active:scale-95 glass-card shrink-0"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <ShieldCheck className="w-6 h-6 text-[#3390ec]" />
-              <h1 className="text-3xl font-black text-white tracking-tight italic uppercase">SUPER ADMIN OS</h1>
+              <ShieldCheck className="w-6 h-6 text-[#3390ec] shrink-0" />
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight italic uppercase truncate">SUPER ADMIN OS</h1>
             </div>
             <p className="text-slate-500 text-[11px] font-bold uppercase tracking-wider">Enterprise Management Layer</p>
           </div>
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex bg-white/[0.02] p-1.5 rounded-2xl border border-white/5 overflow-x-auto hide-scrollbar glass-card">
+        <div className="flex flex-wrap bg-white/[0.02] p-1.5 rounded-2xl border border-white/5 glass-card w-full xl:w-auto justify-start xl:justify-end">
           {TABS.map(tab => (
             <button
               key={tab.id}
@@ -206,7 +206,7 @@ export default function SuperAdminPage() {
                   title="Aggregated Revenue"
                   value={`₹${(stats?.totalRevenue || 0).toLocaleString()}`}
                   icon={<IndianRupee className="w-5 h-5" />}
-                  subtext="Monthly platform volume"
+                  subtext="Total SaaS Earnings"
                 />
                 <StatCard 
                   title="System Growth"

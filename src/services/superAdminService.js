@@ -22,15 +22,15 @@ export const superAdminService = {
       
       if (memberError) throw memberError;
 
-      // 3. Total Revenue (sum of all payments)
-      const { data: payments, error: paymentError } = await supabase
-        .from('payments')
-        .select('amount_paid')
-        .not('amount_paid', 'is', null);
+      // 3. Total SaaS Revenue (sum of all SaaS subscriptions)
+      const { data: saasPayments, error: saasError } = await supabase
+        .from('saas_subscriptions')
+        .select('amount')
+        .not('amount', 'is', null);
       
-      if (paymentError) throw paymentError;
+      if (saasError) throw saasError;
 
-      const totalRevenue = payments.reduce((sum, p) => sum + (parseFloat(p.amount_paid) || 0), 0);
+      const totalRevenue = saasPayments.reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0);
 
 
       // 4. Monthly Gym Signups & Growth Rate
