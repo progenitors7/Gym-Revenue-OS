@@ -15,9 +15,13 @@ function addMonths(dateString, months) {
 function enrichBillingState(gym, latestSubscription) {
   if (!gym) return gym
 
-  const expiresAt = latestSubscription?.created_at && latestSubscription?.duration_months
-    ? addMonths(latestSubscription.created_at, latestSubscription.duration_months)
-    : null
+  // Prefer the explicit period end date stored by the edge function,
+  // fall back to the old created_at + duration_months calculation
+  const expiresAt = latestSubscription?.current_period_end
+    ? latestSubscription.current_period_end
+    : (latestSubscription?.created_at && latestSubscription?.duration_months
+        ? addMonths(latestSubscription.created_at, latestSubscription.duration_months)
+        : null)
 
   const daysLeft = expiresAt
     ? Math.ceil((new Date(expiresAt) - new Date()) / (1000 * 60 * 60 * 24))

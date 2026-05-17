@@ -154,6 +154,10 @@ serve(async (req: Request) => {
         throw new Error('Failed to activate promo subscription')
       }
 
+      const promoStart = new Date()
+      const promoEnd = new Date()
+      promoEnd.setMonth(promoEnd.getMonth() + selectedDuration)
+
       const { error: insertError } = await supabaseClient
         .from('saas_subscriptions')
         .insert([{
@@ -164,7 +168,9 @@ serve(async (req: Request) => {
           status: 'active',
           payment_status: 'captured',
           duration_months: selectedDuration,
-          promo_id: promo.id
+          promo_id: promo.id,
+          current_period_start: promoStart.toISOString(),
+          current_period_end: promoEnd.toISOString()
         }])
 
       if (insertError) {
@@ -286,6 +292,10 @@ serve(async (req: Request) => {
       }
 
       // Log Subscription
+      const periodStart = new Date()
+      const periodEnd = new Date()
+      periodEnd.setMonth(periodEnd.getMonth() + orderDuration)
+
       const { error: insertError } = await supabaseClient
         .from('saas_subscriptions')
         .insert([{
@@ -299,7 +309,9 @@ serve(async (req: Request) => {
           status: 'active',
           payment_status: 'captured',
           duration_months: orderDuration,
-          promo_id: orderDetails.notes?.promoId
+          promo_id: orderDetails.notes?.promoId || null,
+          current_period_start: periodStart.toISOString(),
+          current_period_end: periodEnd.toISOString()
         }])
 
       if (insertError) {

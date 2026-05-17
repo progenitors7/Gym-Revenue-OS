@@ -14,7 +14,7 @@ import { supabase } from '../lib/supabaseClient';
 import { razorpayService } from '../services/razorpayService';
 
 const PRO_PLAN_ID = '770f855a-535c-44f1-9604-0ba7a74c6f59';
-const BILLING_FUNCTION = 'razorpay-subscription';
+const BILLING_FUNCTION = 'razorpay-subscription-v2';
 const FREE_PROMO_DURATION_MONTHS = 3;
 
 const DURATIONS = [
