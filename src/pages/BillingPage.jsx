@@ -187,7 +187,17 @@ export default function BillingPage() {
         description: `Pro Plan - ${selectedDuration.label}`,
         order_id: data.id,
         prefill: {
+          name: gym?.name || '',
           email: gym?.owner_email || '',
+        },
+        theme: {
+          color: '#3390ec', // Premium Brand Accent Color
+        },
+        modal: {
+          confirm_close: true, // Prevents users from accidentally closing the payment popup
+          ondismiss: () => {
+            setProcessing(false);
+          }
         },
         handler: async (response) => {
           // Verify Payment
