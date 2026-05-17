@@ -156,6 +156,34 @@ export const superAdminService = {
   },
 
   /**
+   * Update an existing SaaS plan tier.
+   */
+  async updateSaaSPlan(planId, updates) {
+    const { data, error } = await supabase
+      .from('saas_plans')
+      .update(updates)
+      .eq('id', planId)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  /**
+   * Delete a SaaS plan tier.
+   */
+  async deleteSaaSPlan(planId) {
+    const { error } = await supabase
+      .from('saas_plans')
+      .delete()
+      .eq('id', planId);
+    
+    if (error) throw error;
+    return true;
+  },
+
+  /**
    * Update a gym's SaaS subscription level.
    */
   async updateGymSaaSPlan(gymId, planId) {
@@ -263,5 +291,18 @@ export const superAdminService = {
     
     if (error) throw error;
     return true;
+  },
+
+  /**
+   * Fetch all SaaS subscriptions for all gyms (Billing History).
+   */
+  async getAllSaaSSubscriptions() {
+    const { data, error } = await supabase
+      .from('saas_subscriptions')
+      .select('*, gyms(gym_name), saas_plans(name)')
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    return data;
   }
 };

@@ -121,6 +121,7 @@ export default function GymManagement() {
               <tr className="bg-[#1c1c1c]/50 border-b border-white/5">
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Gym Identity</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Registry Date</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">SaaS Plan</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -141,6 +142,11 @@ export default function GymManagement() {
                   </td>
                   <td className="px-6 py-4 text-gray-400 text-xs font-medium">
                     {new Date(gym.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="bg-[#3390ec]/10 text-[#3390ec] text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
+                      {gym.saas_plans?.name || 'Starter/None'}
+                    </span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${

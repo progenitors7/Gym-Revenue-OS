@@ -25,7 +25,7 @@ const DURATIONS = [
 ];
 
 export default function BillingPage() {
-  const { gym, isReady, refreshGym } = useCurrentGym();
+  const { gym, gymName, ownerEmail, isReady, refreshGym } = useCurrentGym();
   const [processing, setProcessing] = useState(false);
   
   // Selection State
@@ -55,7 +55,7 @@ export default function BillingPage() {
       }
 
       // Check usage limits
-      if (data.used_count >= data.max_uses) {
+      if (data.max_uses !== null && data.used_count >= data.max_uses) {
         setPromoError('This code has reached its usage limit');
         return;
       }
@@ -154,8 +154,8 @@ export default function BillingPage() {
         description: `Pro Plan - ${selectedDuration.label}`,
         order_id: data.id,
         prefill: {
-          name: gym?.name || '',
-          email: gym?.owner_email || '',
+          name: gymName || '',
+          email: ownerEmail || '',
         },
         theme: {
           color: '#3390ec', // Premium Brand Accent Color
@@ -209,6 +209,7 @@ export default function BillingPage() {
   const expiryDate = gym?.subscription_expires_at ? new Date(gym.subscription_expires_at) : null;
   const isExpired = gym?.billing_status === 'expired';
   const isExpiringSoon = Number.isFinite(gym?.billing_days_left) && gym.billing_days_left >= 0 && gym.billing_days_left <= 7;
+  const isDurationDisabled = appliedPromo?.discount_type === 'full_free';
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700">
@@ -257,12 +258,13 @@ export default function BillingPage() {
               {DURATIONS.map((dur) => (
                 <button
                   key={dur.months}
-                  onClick={() => setSelectedDuration(dur)}
+                  onClick={() => !isDurationDisabled && setSelectedDuration(dur)}
+                  disabled={isDurationDisabled}
                   className={`relative p-6 rounded-3xl border-2 transition-all text-left group ${
                     selectedDuration.months === dur.months
                       ? 'bg-[#3390ec]/5 border-[#3390ec] shadow-xl shadow-[#3390ec]/10'
                       : 'bg-[#1c1c1c] border-white/5 hover:border-white/10'
-                  }`}
+                  } ${isDurationDisabled && selectedDuration.months !== dur.months ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {dur.popular && (
                     <div className="absolute -top-3 right-4 px-3 py-1 bg-amber-400 text-black text-[8px] font-black uppercase tracking-widest rounded-full shadow-lg">
@@ -419,3 +421,4 @@ export default function BillingPage() {
     </div>
   );
 }
+

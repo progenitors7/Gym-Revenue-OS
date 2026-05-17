@@ -17,8 +17,13 @@ import Toast from '../UI/Toast';
 
 export default function PlanManager() {
   const [plans, setPlans] = useState([]);
+  const [subscriptions, setSubscriptions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [showBillingHistory, setShowBillingHistory] = useState(false);
   const [newPlan, setNewPlan] = useState({
     name: '',
     price: 0,
@@ -35,6 +40,7 @@ export default function PlanManager() {
 
   useEffect(() => {
     fetchPlans();
+    fetchSubscriptions();
   }, []);
 
   async function fetchPlans() {
@@ -49,17 +55,58 @@ export default function PlanManager() {
     }
   }
 
-  async function handleAddPlan(e) {
+  async function fetchSubscriptions() {
+    try {
+      setLoadingSubscriptions(true);
+      const data = await superAdminService.getAllSaaSSubscriptions();
+      setSubscriptions(data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingSubscriptions(false);
+    }
+  }
+
+  async function handleSubmitPlan(e) {
     e.preventDefault();
     try {
-      await superAdminService.createSaaSPlan(newPlan);
-      setShowAddForm(false);
-      setNewPlan({ name: '', price: 0, max_members: 100, features: [] });
+      if (editingId) {
+        await superAdminService.updateSaaSPlan(editingId, newPlan);
+        showToast('SaaS plan updated successfully');
+      } else {
+        await superAdminService.createSaaSPlan(newPlan);
+        showToast('New SaaS plan created successfully');
+      }
+      handleCancelForm();
       fetchPlans();
-      showToast('New SaaS plan created successfully');
     } catch (err) {
-      showToast('Failed to create plan', 'error');
+      showToast(editingId ? 'Failed to update plan' : 'Failed to create plan', 'error');
     }
+  }
+
+  function handleCancelForm() {
+    setShowAddForm(false);
+    setEditingId(null);
+    setNewPlan({ name: '', price: 0, max_members: 100, features: [] });
+  }
+
+  async function handleDeletePlan(id) {
+    if (!confirm('Are you sure you want to delete this plan? Gyms using this plan might be affected.')) return;
+    try {
+      await superAdminService.deleteSaaSPlan(id);
+      showToast('Plan deleted successfully');
+      fetchPlans();
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to delete plan. It might be in use.', 'error');
+    }
+  }
+
+  function handleEditPlan(plan) {
+    setNewPlan({ ...plan });
+    setEditingId(plan.id);
+    setShowAddForm(true);
+    setOpenMenuId(null);
   }
 
   function addFeature() {
@@ -86,7 +133,7 @@ export default function PlanManager() {
           <p className="text-gray-500 text-xs font-medium uppercase tracking-wider">Control monetization and feature access</p>
         </div>
         <button 
-          onClick={() => setShowAddForm(!showAddForm)}
+          onClick={() => showAddForm ? handleCancelForm() : setShowAddForm(true)}
           className="flex items-center gap-2 px-4 py-2.5 bg-[#3390ec] hover:bg-[#2b83d6] text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-[#3390ec]/20 active:scale-95"
         >
           {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
@@ -96,7 +143,7 @@ export default function PlanManager() {
 
       {showAddForm && (
         <div className="bg-[#212121] border border-[#3390ec]/30 rounded-2xl p-6 shadow-2xl animate-in slide-in-from-top-4">
-          <form onSubmit={handleAddPlan} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <form onSubmit={handleSubmitPlan} className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest px-1">Tier Name</label>
@@ -166,7 +213,7 @@ export default function PlanManager() {
                 type="submit"
                 className="w-full py-3 bg-[#3390ec] text-white rounded-xl text-xs font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all"
               >
-                Save Membership Tier
+                {editingId ? 'Update Membership Tier' : 'Save Membership Tier'}
               </button>
             </div>
           </form>
@@ -193,9 +240,45 @@ export default function PlanManager() {
                    plan.name === 'Professional' ? <Star className="w-6 h-6" /> :
                    <Shield className="w-6 h-6" />}
                 </div>
-                <button className="p-2 rounded-xl hover:bg-white/5 text-gray-700 hover:text-white transition-all">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
+                <div className="relative">
+                  <button 
+                    onClick={() => setOpenMenuId(openMenuId === plan.id ? null : plan.id)}
+                    className="p-2 rounded-xl hover:bg-white/5 text-gray-700 hover:text-white transition-all"
+                  >
+                    <MoreVertical className="w-4 h-4" />
+                  </button>
+                  
+                  {openMenuId === plan.id && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setOpenMenuId(null)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-[#1c1c1c] border border-white/10 rounded-xl shadow-2xl z-20 py-2 animate-in zoom-in-95 duration-200">
+                        <button 
+                          onClick={() => handleEditPlan(plan)}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                        >
+                          <Settings className="w-4 h-4" />
+                          Edit Plan
+                        </button>
+                        
+                        <div className="h-px bg-white/5 my-1" />
+
+                        <button 
+                          onClick={() => {
+                            handleDeletePlan(plan.id);
+                            setOpenMenuId(null);
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-rose-500 hover:bg-rose-500/10 transition-all"
+                        >
+                          <X className="w-4 h-4" />
+                          Delete Plan
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -234,9 +317,80 @@ export default function PlanManager() {
       <div className="bg-[#212121] border border-white/5 rounded-2xl p-6 space-y-6 shadow-2xl">
         <div className="flex items-center justify-between">
           <h3 className="text-white font-bold text-lg tracking-tight">Active Gym Subscriptions</h3>
-          <button className="text-[#3390ec] text-xs font-black uppercase tracking-widest hover:underline">View Billing History</button>
+          <button 
+            onClick={() => setShowBillingHistory(!showBillingHistory)}
+            className="text-[#3390ec] text-xs font-black uppercase tracking-widest hover:underline transition-all"
+          >
+            {showBillingHistory ? 'Hide Billing History' : 'View Billing History'}
+          </button>
         </div>
-        <p className="text-gray-500 text-xs italic">Use the Gym Directory tab to change individual gym subscription levels.</p>
+        
+        {!showBillingHistory ? (
+          <p className="text-gray-500 text-xs italic">Use the Gym Directory tab to change individual gym subscription levels.</p>
+        ) : (
+          <div className="space-y-4 animate-in slide-in-from-top-4">
+            {loadingSubscriptions ? (
+              <div className="py-8 text-center text-gray-500 font-medium">Loading Billing History...</div>
+            ) : subscriptions.length === 0 ? (
+              <div className="py-8 text-center text-gray-500 font-medium">No billing history found.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/5 text-gray-500 text-[10px] uppercase tracking-widest font-black">
+                      <th className="py-3 px-4">Gym Name</th>
+                      <th className="py-3 px-4">Plan</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Period</th>
+                      <th className="py-3 px-4">Payment Info</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm text-gray-300">
+                    {subscriptions.map((sub) => (
+                      <tr key={sub.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4 px-4 font-bold text-white">
+                          {sub.gyms?.gym_name || 'Unknown Gym'}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="bg-[#3390ec]/10 text-[#3390ec] text-[10px] font-bold px-2 py-1 rounded-lg">
+                            {sub.saas_plans?.name || 'Unknown Plan'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
+                            sub.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
+                            sub.status === 'past_due' ? 'bg-rose-500/10 text-rose-500' :
+                            sub.status === 'canceled' ? 'bg-gray-500/10 text-gray-400' :
+                            'bg-amber-500/10 text-amber-500'
+                          }`}>
+                            {sub.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs">Start: {sub.current_period_start ? new Date(sub.current_period_start).toLocaleDateString() : 'N/A'}</span>
+                            <span className="text-xs">End: {sub.current_period_end ? new Date(sub.current_period_end).toLocaleDateString() : 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td className="py-4 px-4">
+                          {sub.razorpay_order_id ? (
+                            <span className="text-[10px] font-medium text-gray-400 font-mono">
+                              {sub.razorpay_payment_id || sub.razorpay_order_id}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                              FREE / PROMO
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

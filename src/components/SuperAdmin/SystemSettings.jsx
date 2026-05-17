@@ -26,16 +26,16 @@ export default function SystemSettings() {
     fetchSettings();
   }, []);
 
-  async function fetchSettings() {
+  async function fetchSettings(quiet = false) {
     try {
-      setLoading(true);
+      if (!quiet) setLoading(true);
       const data = await superAdminService.getSystemSettings();
       setSettings(data);
     } catch (err) {
       console.error(err);
       showToast('Failed to load settings', 'error');
     } finally {
-      setLoading(false);
+      if (!quiet) setLoading(false);
     }
   }
 
@@ -46,6 +46,7 @@ export default function SystemSettings() {
       setSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));
       showToast(`${key.replace(/_/g, ' ')} updated successfully`);
     } catch (err) {
+      await fetchSettings(true); // Revert on error quietly
       showToast('Failed to update setting', 'error');
     } finally {
       setSaving(null);

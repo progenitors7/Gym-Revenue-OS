@@ -134,11 +134,11 @@ export default function SettingsPage() {
   };
 
   // Update gymName field when prop changes
-  const [prevName, setPrevName] = useState(gymName);
-  if (gymName !== prevName) {
-    setPrevName(gymName);
-    setNewGymName(gymName || '');
-  }
+  useEffect(() => {
+    if (gymName !== undefined) {
+      setNewGymName(gymName || '');
+    }
+  }, [gymName]);
 
   // Load plans
   const fetchPlans = useCallback(async () => {
@@ -182,7 +182,7 @@ export default function SettingsPage() {
   };
 
   const handleAddPlan = async () => {
-    if (!newPlan.name || !newPlan.duration_days) return showToast('Please fill all fields', 'error');
+    if (!newPlan.name || !newPlan.duration_days || newPlan.price === '' || isNaN(newPlan.price)) return showToast('Please fill all fields', 'error');
     setLoadingPlans(true);
     try {
       await planService.createPlan(gym.id, newPlan);
@@ -234,10 +234,10 @@ export default function SettingsPage() {
       setCurrentPw(''); setNewPw(''); setConfirmPw('');
       showToast('Password updated successfully!');
     } catch (err) {
-      if (err.message.toLowerCase().includes('invalid login credentials')) {
+      if (err?.message?.toLowerCase().includes('invalid login credentials')) {
         showToast('Current password is incorrect', 'error');
       } else {
-        showToast(err.message || 'Failed to change password', 'error');
+        showToast(err?.message || 'Failed to change password', 'error');
       }
     } finally {
       setSavingPw(false);
@@ -312,6 +312,8 @@ export default function SettingsPage() {
     } catch {
       localStorage.clear();
       window.location.href = '/login';
+    } finally {
+      setSigningOut(false);
     }
   };
 
