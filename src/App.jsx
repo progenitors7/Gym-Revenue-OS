@@ -9,7 +9,6 @@ import ErrorBoundary from './components/Common/ErrorBoundary'
 import SuperAdminRoute from './components/Layout/SuperAdminRoute'
 import Logo from './components/UI/Logo'
 import { motion } from 'framer-motion'
-import { Toaster } from 'react-hot-toast'
 
 
 const AuthPage = React.lazy(() => import('./components/Auth/AuthPage'))
@@ -76,24 +75,6 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <GymProvider>
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              className: 'bg-[#0F172A] text-white border border-white/10 rounded-2xl font-sans text-sm font-medium shadow-2xl',
-              success: {
-                iconTheme: {
-                  primary: '#10B981',
-                  secondary: '#FFFFFF',
-                },
-              },
-              error: {
-                iconTheme: {
-                  primary: '#EF4444',
-                  secondary: '#FFFFFF',
-                },
-              },
-            }}
-          />
           <Suspense fallback={<div className="h-screen flex items-center justify-center bg-[#1c1c1c]"><LoadingScreen /></div>}>
             <Routes>
               {/* ── Public ── */}

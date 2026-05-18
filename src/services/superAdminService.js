@@ -116,6 +116,26 @@ export const superAdminService = {
   },
 
   /**
+   * Send a direct system message to a specific gym owner.
+   */
+  async sendDirectMessage(gymId, messageData) {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert({
+        gym_id: gymId,
+        type: 'system_message',
+        title: messageData.title,
+        message: messageData.message,
+        is_read: false
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    return data;
+  },
+
+  /**
    * Fetch all past broadcasts.
    */
   async getBroadcasts() {
@@ -284,6 +304,15 @@ export const superAdminService = {
    * Permanently delete a gym and all its associated data.
    */
   async deleteGym(gymId) {
+    // Manually delete dependent records to avoid foreign key constraints
+    await supabase.from('payments').delete().eq('gym_id', gymId);
+    await supabase.from('subscriptions').delete().eq('gym_id', gymId);
+    await supabase.from('notifications').delete().eq('gym_id', gymId);
+    await supabase.from('members').delete().eq('gym_id', gymId);
+    await supabase.from('membership_plans').delete().eq('gym_id', gymId);
+    await supabase.from('saas_subscriptions').delete().eq('gym_id', gymId);
+    await supabase.from('support_tickets').delete().eq('gym_id', gymId);
+    
     const { error } = await supabase
       .from('gyms')
       .delete()

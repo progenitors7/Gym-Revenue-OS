@@ -18,6 +18,7 @@ import Toast from '../UI/Toast';
 export default function PlanManager() {
   const [plans, setPlans] = useState([]);
   const [subscriptions, setSubscriptions] = useState([]);
+  const [gymsData, setGymsData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingSubscriptions, setLoadingSubscriptions] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -58,12 +59,24 @@ export default function PlanManager() {
   async function fetchSubscriptions() {
     try {
       setLoadingSubscriptions(true);
-      const data = await superAdminService.getAllSaaSSubscriptions();
-      setSubscriptions(data || []);
+      const subData = await superAdminService.getAllSaaSSubscriptions();
+      setSubscriptions(subData || []);
+      const gymData = await superAdminService.getAllGyms();
+      setGymsData(gymData || []);
     } catch (err) {
       console.error(err);
     } finally {
       setLoadingSubscriptions(false);
+    }
+  }
+
+  async function handleUpdateGymPlan(gymId, planId) {
+    try {
+      await superAdminService.updateGymSaaSPlan(gymId, planId ? planId : null);
+      showToast('Gym plan updated successfully');
+      fetchSubscriptions();
+    } catch (err) {
+      showToast('Failed to update gym plan', 'error');
     }
   }
 
@@ -326,7 +339,61 @@ export default function PlanManager() {
         </div>
         
         {!showBillingHistory ? (
-          <p className="text-gray-500 text-xs italic">Use the Gym Directory tab to change individual gym subscription levels.</p>
+          <div className="space-y-4 animate-in slide-in-from-top-4">
+            {loadingSubscriptions ? (
+              <div className="py-8 text-center text-gray-500 font-medium">Loading Gyms...</div>
+            ) : gymsData.length === 0 ? (
+              <div className="py-8 text-center text-gray-500 font-medium">No gyms found.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-white/5 text-gray-500 text-[10px] uppercase tracking-widest font-black">
+                      <th className="py-3 px-4">Gym Name</th>
+                      <th className="py-3 px-4">Current Plan</th>
+                      <th className="py-3 px-4">Status</th>
+                      <th className="py-3 px-4">Change Plan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="text-sm text-gray-300">
+                    {gymsData.map((gym) => (
+                      <tr key={gym.id} className="border-b border-white/5 hover:bg-white/[0.02] transition-colors">
+                        <td className="py-4 px-4 font-bold text-white">
+                          {gym.gym_name || 'Unknown Gym'}
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className="bg-[#3390ec]/10 text-[#3390ec] text-[10px] font-bold px-2 py-1 rounded-lg">
+                            {gym.saas_plans?.name || 'No Plan'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <span className={`text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider ${
+                            gym.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' :
+                            gym.status === 'blocked' ? 'bg-rose-500/10 text-rose-500' :
+                            'bg-amber-500/10 text-amber-500'
+                          }`}>
+                            {gym.status || 'Pending'}
+                          </span>
+                        </td>
+                        <td className="py-4 px-4">
+                          <select 
+                            value={gym.saas_plan_id || ''}
+                            onChange={(e) => handleUpdateGymPlan(gym.id, e.target.value)}
+                            className="bg-[#1c1c1c] border border-white/10 text-white text-xs px-3 py-2 rounded-xl focus:outline-none focus:border-[#3390ec]"
+                          >
+                            <option value="">No Plan</option>
+                            {plans.map((p) => (
+                              <option key={p.id} value={p.id}>{p.name}</option>
+                            ))}
+                          </select>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         ) : (
           <div className="space-y-4 animate-in slide-in-from-top-4">
             {loadingSubscriptions ? (

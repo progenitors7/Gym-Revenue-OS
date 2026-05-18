@@ -15,7 +15,9 @@ import {
   Eye,
   EyeOff,
   AlertTriangle,
-  ArrowLeft
+  ArrowLeft,
+  LifeBuoy,
+  MessageSquare
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
@@ -105,6 +107,15 @@ export default function SettingsPage() {
 
   // Export state
   const [exporting, setExporting] = useState(false);
+
+  // Support ticket state
+  const [ticket, setTicket] = useState({
+    subject: '',
+    category: 'general_inquiry',
+    priority: 'low',
+    description: ''
+  });
+  const [submittingTicket, setSubmittingTicket] = useState(false);
 
   // Danger zone
   const [deleteConfirm, setDeleteConfirm] = useState('');
@@ -283,6 +294,31 @@ export default function SettingsPage() {
       showToast(err.message || 'Export failed', 'error');
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleSubmitTicket = async (e) => {
+    e.preventDefault();
+    if (!ticket.subject || !ticket.description) return showToast('Please fill subject and description', 'error');
+    if (!gym?.id) return;
+    
+    setSubmittingTicket(true);
+    try {
+      const { error } = await supabase.from('support_tickets').insert([{
+        gym_id: gym.id,
+        subject: ticket.subject,
+        category: ticket.category,
+        priority: ticket.priority,
+        description: ticket.description,
+        status: 'open'
+      }]);
+      if (error) throw error;
+      showToast('Support ticket submitted successfully!');
+      setTicket({ subject: '', category: 'general_inquiry', priority: 'low', description: '' });
+    } catch (err) {
+      showToast(err.message || 'Failed to submit ticket', 'error');
+    } finally {
+      setSubmittingTicket(false);
     }
   };
 
@@ -538,6 +574,72 @@ export default function SettingsPage() {
             <Download className="w-4 h-4" />
             {exporting ? 'Exporting...' : 'Export Member Data'}
           </button>
+        </Section>
+
+        {/* Support Center */}
+        <Section 
+          icon={<LifeBuoy className="w-5 h-5" />}
+          title="Support & Help" 
+          description="Contact Super Admin for any issues or queries"
+        >
+          <form onSubmit={handleSubmitTicket} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Field 
+                label="Subject" 
+                id="ticket-subject" 
+                type="text" 
+                placeholder="Brief summary of the issue"
+                value={ticket.subject} 
+                onChange={e => setTicket({...ticket, subject: e.target.value})} 
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-400 px-1">Category</label>
+                  <select
+                    value={ticket.category}
+                    onChange={e => setTicket({...ticket, category: e.target.value})}
+                    className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all"
+                  >
+                    <option value="general_inquiry">General Inquiry</option>
+                    <option value="technical_issue">Technical Issue</option>
+                    <option value="billing_issue">Billing Issue</option>
+                  </select>
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-gray-400 px-1">Priority</label>
+                  <select
+                    value={ticket.priority}
+                    onChange={e => setTicket({...ticket, priority: e.target.value})}
+                    className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all"
+                  >
+                    <option value="low">Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-gray-400 px-1">Description</label>
+              <textarea
+                rows={4}
+                value={ticket.description}
+                onChange={e => setTicket({...ticket, description: e.target.value})}
+                className="w-full bg-[#1c1c1c] border border-white/5 rounded-lg px-4 py-2.5 text-sm text-white placeholder-gray-600 focus:outline-none focus:border-[#3390ec]/50 transition-all resize-none"
+                placeholder="Please describe your issue in detail..."
+              />
+            </div>
+            <div className="pt-2">
+              <button 
+                type="submit"
+                disabled={submittingTicket} 
+                className="flex items-center gap-2 px-6 py-2 bg-[#3390ec] hover:bg-[#2b7ad2] disabled:opacity-50 text-white font-medium rounded-lg text-sm transition-all"
+              >
+                <MessageSquare className="w-4 h-4" />
+                {submittingTicket ? 'Submitting...' : 'Submit Ticket'}
+              </button>
+            </div>
+          </form>
         </Section>
 
         {/* Danger Zone */}

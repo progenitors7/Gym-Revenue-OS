@@ -12,7 +12,7 @@ import {
 import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
 import { razorpayService } from '../services/razorpayService';
-import toast from 'react-hot-toast';
+import Toast from '../components/UI/Toast';
 
 const PRO_PLAN_ID = '770f855a-535c-44f1-9604-0ba7a74c6f59';
 const BILLING_FUNCTION = 'razorpay-subscription-v2';
@@ -28,6 +28,7 @@ const DURATIONS = [
 export default function BillingPage() {
   const { gym, gymName, ownerEmail, isReady, refreshGym } = useCurrentGym();
   const [processing, setProcessing] = useState(false);
+  const [toastState, setToastState] = useState({ message: '', type: 'success' });
   
   // Selection State
   const [selectedDuration, setSelectedDuration] = useState(DURATIONS[0]);
@@ -118,7 +119,7 @@ export default function BillingPage() {
 
         if (redeemError) throw redeemError;
 
-        toast.success('3 months free subscription activated successfully!');
+        setToastState({ message: '3 months free subscription activated successfully!', type: 'success' });
         await refreshGym();
         window.location.reload();
         return;
@@ -143,7 +144,7 @@ export default function BillingPage() {
         console.error('Edge Function Error:', error);
         // Try to get the detailed error message from the response if possible
         const errorMsg = error.message || 'Failed to create payment order';
-        toast.error(`Billing Error: ${errorMsg}`);
+        setToastState({ message: `Billing Error: ${errorMsg}`, type: 'error' });
         return;
       }
 
@@ -178,7 +179,7 @@ export default function BillingPage() {
           });
 
           if (verifyErr) throw verifyErr;
-          toast.success('Payment successful! Subscription active.');
+          setToastState({ message: 'Payment successful! Subscription active.', type: 'success' });
           await refreshGym();
           window.location.reload();
         }
@@ -189,7 +190,7 @@ export default function BillingPage() {
 
     } catch (err) {
       console.error(err);
-      toast.error(err.message || 'Action failed');
+      setToastState({ message: err.message || 'Action failed', type: 'error' });
     } finally {
       setProcessing(false);
     }
@@ -209,6 +210,7 @@ export default function BillingPage() {
   const finalAmount = calculateFinalAmount();
   const expiryDate = gym?.subscription_expires_at ? new Date(gym.subscription_expires_at) : null;
   const isExpired = gym?.billing_status === 'expired';
+  const isPending = gym?.billing_status === 'pending' || gym?.status === 'pending';
   const isExpiringSoon = Number.isFinite(gym?.billing_days_left) && gym.billing_days_left >= 0 && gym.billing_days_left <= 7;
   const isDurationDisabled = appliedPromo?.discount_type === 'full_free';
 
@@ -216,29 +218,51 @@ export default function BillingPage() {
     <div className="p-4 sm:p-6 lg:p-8 max-w-5xl mx-auto space-y-10 animate-in fade-in duration-700">
       {/* Header */}
       <div className="text-center space-y-4">
-        <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#3390ec]/10 text-[#3390ec] rounded-full text-[10px] font-black uppercase tracking-widest">
-          Premium Access
-        </div>
-        <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
-          Gym OS <span className="text-[#3390ec]">Pro Plan</span>
-        </h1>
-        <p className="text-gray-500 max-w-xl mx-auto text-sm font-medium leading-relaxed">
-          Unlock unlimited potential. One plan, everything included. 
-          Choose a duration and start growing your fitness empire.
-        </p>
-        {(expiryDate || isExpired) && (
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest ${
-            isExpired
-              ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-              : isExpiringSoon
-                ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
-                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-          }`}>
-            <Clock className="w-3.5 h-3.5" />
-            {isExpired
-              ? 'Your plan has expired. Renew to continue.'
-              : `Current access valid until ${expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
-          </div>
+        {isPending ? (
+          <>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-amber-400/10 text-amber-400 rounded-full text-[10px] font-black uppercase tracking-widest">
+              <Zap className="w-3 h-3" />
+              Activate Your Account
+            </div>
+            <h1 className="text-4xl sm:text-5xl font-black text-white tracking-tighter uppercase italic">
+              Welcome to <span className="text-[#3390ec]">Gym OS</span>
+            </h1>
+            <p className="text-gray-400 max-w-xl mx-auto text-sm font-medium leading-relaxed">
+              You're one step away from managing your gym like a pro.
+              Choose a plan below to unlock all features and start growing your fitness empire.
+            </p>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border bg-amber-500/10 text-amber-400 border-amber-500/20 text-[11px] font-black uppercase tracking-widest">
+              <CreditCard className="w-3.5 h-3.5" />
+              Subscription required to access the platform
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#3390ec]/10 text-[#3390ec] rounded-full text-[10px] font-black uppercase tracking-widest">
+              Premium Access
+            </div>
+            <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
+              Gym OS <span className="text-[#3390ec]">Pro Plan</span>
+            </h1>
+            <p className="text-gray-500 max-w-xl mx-auto text-sm font-medium leading-relaxed">
+              Unlock unlimited potential. One plan, everything included. 
+              Choose a duration and start growing your fitness empire.
+            </p>
+            {(expiryDate || isExpired) && (
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-[11px] font-black uppercase tracking-widest ${
+                isExpired
+                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                  : isExpiringSoon
+                    ? 'bg-amber-500/10 text-amber-400 border-amber-500/20'
+                    : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              }`}>
+                <Clock className="w-3.5 h-3.5" />
+                {isExpired
+                  ? 'Your plan has expired. Renew to continue.'
+                  : `Current access valid until ${expiryDate.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}`}
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -419,6 +443,12 @@ export default function BillingPage() {
           Contact Support
         </button>
       </div>
+
+      <Toast 
+        message={toastState.message} 
+        type={toastState.type} 
+        onClose={() => setToastState({ message: '', type: 'success' })} 
+      />
     </div>
   );
 }

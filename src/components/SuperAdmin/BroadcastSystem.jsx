@@ -31,15 +31,22 @@ export default function BroadcastSystem() {
     setTimeout(() => setToast({ message: '', type: 'success' }), 4000);
   };
 
+  const [gyms, setGyms] = useState([]);
+  const [targetGymId, setTargetGymId] = useState('all');
+
   useEffect(() => {
-    fetchBroadcasts();
+    fetchInitialData();
   }, []);
 
-  async function fetchBroadcasts() {
+  async function fetchInitialData() {
     try {
       setLoading(true);
-      const data = await superAdminService.getBroadcasts();
-      setBroadcasts(data);
+      const [broadcastData, gymData] = await Promise.all([
+        superAdminService.getBroadcasts(),
+        superAdminService.getAllGyms()
+      ]);
+      setBroadcasts(broadcastData);
+      setGyms(gymData);
     } catch (err) {
       console.error(err);
     } finally {
@@ -56,16 +63,22 @@ export default function BroadcastSystem() {
 
     try {
       setSending(true);
-      await superAdminService.createBroadcast({
-        ...formData,
-        created_by: user?.id
-      });
+      if (targetGymId === 'all') {
+        await superAdminService.createBroadcast({
+          ...formData,
+          created_by: user?.id
+        });
+        showToast('Broadcast sent successfully!');
+      } else {
+        await superAdminService.sendDirectMessage(targetGymId, formData);
+        showToast('Direct message sent successfully!');
+      }
       setFormData({ title: '', message: '', type: 'info' });
-      fetchBroadcasts();
-      showToast('Broadcast sent successfully!');
+      setTargetGymId('all');
+      fetchInitialData();
     } catch (err) {
-      console.error('Broadcast failed:', err);
-      showToast(err.message || 'Failed to send broadcast', 'error');
+      console.error('Messaging failed:', err);
+      showToast(err.message || 'Failed to send message', 'error');
     } finally {
       setSending(false);
     }
@@ -103,13 +116,27 @@ export default function BroadcastSystem() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest px-1">Announcement Title</label>
+            <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest px-1">Target Audience</label>
+            <select
+              value={targetGymId}
+              onChange={(e) => setTargetGymId(e.target.value)}
+              className="w-full px-4 py-3 bg-[#1c1c1c] border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all appearance-none"
+            >
+              <option value="all">Broadcast to All Gyms</option>
+              {gyms.map(gym => (
+                <option key={gym.id} value={gym.id}>Direct Message: {gym.gym_name}</option>
+              ))}
+            </select>
+          </div>
+        
+          <div className="space-y-1.5">
+            <label className="text-gray-500 text-[10px] font-black uppercase tracking-widest px-1">Message Title</label>
             <input
               type="text"
               required
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="e.g. System Maintenance or New Feature"
+              placeholder="e.g. System Maintenance or Issue Resolved"
               className="w-full px-4 py-3 bg-[#1c1c1c] border border-white/5 rounded-xl text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all"
             />
           </div>

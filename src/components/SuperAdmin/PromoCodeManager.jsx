@@ -86,6 +86,9 @@ export default function PromoCodeManager() {
   const handleDeleteCode = async (id) => {
     if (!confirm('Are you sure you want to delete this code?')) return;
     try {
+      // First unlink from subscriptions to prevent foreign key errors
+      await supabase.from('saas_subscriptions').update({ promo_code_id: null }).eq('promo_code_id', id);
+
       const { error } = await supabase
         .from('promo_codes')
         .delete()
@@ -93,8 +96,8 @@ export default function PromoCodeManager() {
       
       if (error) throw error;
       fetchCodes();
-    } catch {
-      alert('Failed to delete code');
+    } catch (err) {
+      alert(err.message || 'Failed to delete code');
     }
   };
 

@@ -18,14 +18,64 @@ export function useDashboardStats() {
       setLoading(true);
       setError(null);
 
-      // Fetch all members for this gym
-      const { data: members, error: membersError } = await supabase
+      // Fetch all members for this gym with their subscriptions
+      const { data: rawMembers, error: membersError } = await supabase
         .from('members')
-        .select('id, full_name, phone_number, status, expiry_date, created_at')
+        .select(`
+          id, gym_id, full_name, phone_number, gender,
+          join_date, membership_plan, expiry_date, status, notes, created_at,
+          subscriptions (
+            id,
+            plan_name,
+            expiry_date,
+            status,
+            start_date,
+            created_at
+          )
+        `)
         .eq('gym_id', gym.id)
         .order('created_at', { ascending: false });
 
       if (membersError) throw membersError;
+
+      // Sync member statuses from their latest subscriptions to ensure exact accuracy
+      const getStatusFromExpiry = (expiryDate) => {
+        if (!expiryDate) return 'active';
+
+        const todayDate = new Date();
+        todayDate.setHours(0, 0, 0, 0);
+        const expiry = new Date(expiryDate);
+        expiry.setHours(0, 0, 0, 0);
+        const daysLeft = Math.ceil((expiry - todayDate) / (1000 * 60 * 60 * 24));
+
+        if (daysLeft < 0) return 'expired';
+        if (daysLeft <= 7) return 'expiring_soon';
+        return 'active';
+      };
+
+      const getLatestSubscription = (subs = []) => {
+        return subs
+          .filter((sub) => sub.expiry_date)
+          .sort((a, b) => new Date(b.expiry_date) - new Date(a.expiry_date))[0];
+      };
+
+      const syncMemberFromLatestSubscription = (member) => {
+        const latest = getLatestSubscription(member.subscriptions);
+        if (!latest) {
+          const { subscriptions, ...cleanMember } = member;
+          return cleanMember;
+        }
+
+        const { subscriptions, ...cleanMember } = member;
+        return {
+          ...cleanMember,
+          membership_plan: latest.plan_name || cleanMember.membership_plan,
+          expiry_date: latest.expiry_date || cleanMember.expiry_date,
+          status: getStatusFromExpiry(latest.expiry_date || cleanMember.expiry_date),
+        };
+      };
+
+      const members = (rawMembers ?? []).map(syncMemberFromLatestSubscription);
 
       // Fetch all payments for this gym
       const { data: payments, error: paymentsError } = await supabase
@@ -43,14 +93,22 @@ export function useDashboardStats() {
 
       if (paymentsError) throw paymentsError;
 
-      // Calculate Dates
+      // Calculate Dates in local timezone to prevent UTC timezone-shifting bugs
       const today = new Date();
-      const todayStr = today.toISOString().split('T')[0];
-      const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+      
+      const getLocalDateString = (d) => {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      };
+
+      const todayStr = getLocalDateString(today);
+      const startOfMonth = getLocalDateString(new Date(today.getFullYear(), today.getMonth(), 1));
       
       const next3Days = new Date(today);
       next3Days.setDate(today.getDate() + 3);
-      const next3DaysStr = next3Days.toISOString().split('T')[0];
+      const next3DaysStr = getLocalDateString(next3Days);
 
       // --- Membership Metrics ---
       const membershipStats = {
@@ -122,7 +180,7 @@ export function useDashboardStats() {
       for (let i = 6; i >= 0; i--) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = getLocalDateString(d);
         const displayLabel = d.toLocaleDateString('en-US', { weekday: 'short' });
         chartDataMap[dateStr] = { label: displayLabel, date: dateStr, value: 0 };
       }

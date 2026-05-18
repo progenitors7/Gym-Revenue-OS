@@ -8,7 +8,8 @@ import {
   Ban, 
   ExternalLink,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  X
 } from 'lucide-react';
 import { superAdminService } from '../../services/superAdminService';
 import Toast from '../UI/Toast';
@@ -21,6 +22,9 @@ export default function GymManagement() {
   const [openMenuId, setOpenMenuId] = useState(null);
   const [statusFilter, setStatusFilter] = useState('all');
   const [toast, setToast] = useState({ message: '', type: 'success' });
+  const [saasPlans, setSaasPlans] = useState([]);
+  const [activationModal, setActivationModal] = useState({ isOpen: false, gymId: null, gymName: '' });
+  const [selectedPlan, setSelectedPlan] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -29,7 +33,25 @@ export default function GymManagement() {
 
   useEffect(() => {
     fetchGyms();
+    fetchPlans();
   }, []);
+
+  async function fetchPlans() {
+    try {
+      const plans = await superAdminService.getSaaSPlans();
+      setSaasPlans(plans);
+      if (plans.length > 0) setSelectedPlan(plans[0].id);
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function getDaysAgo(dateString) {
+    if (!dateString) return 'Never';
+    const diffTime = Math.abs(new Date() - new Date(dateString));
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays === 0 ? 'Today' : diffDays === 1 ? 'Yesterday' : `${diffDays} days ago`;
+  }
 
   async function fetchGyms() {
     try {
@@ -64,6 +86,33 @@ export default function GymManagement() {
       showToast(`Gym ${newStatus === 'active' ? 'activated' : 'blocked'} successfully`);
     } catch (err) {
       showToast('Failed to update status', 'error');
+    } finally {
+      setUpdatingId(null);
+    }
+  }
+
+  async function handleActivateSubmit() {
+    try {
+      setUpdatingId(activationModal.gymId);
+      
+      if (selectedPlan) {
+        await superAdminService.updateGymSaaSPlan(activationModal.gymId, selectedPlan);
+      }
+      
+      await superAdminService.updateGymStatus(activationModal.gymId, 'active');
+      
+      const selectedPlanData = saasPlans.find(p => p.id === selectedPlan);
+      
+      setGyms(prev => prev.map(g => g.id === activationModal.gymId ? { 
+        ...g, 
+        status: 'active',
+        saas_plans: selectedPlanData || g.saas_plans
+      } : g));
+      
+      showToast('Gym activated and plan assigned successfully');
+      setActivationModal({ isOpen: false, gymId: null, gymName: '' });
+    } catch (err) {
+      showToast('Failed to activate gym', 'error');
     } finally {
       setUpdatingId(null);
     }
@@ -122,6 +171,7 @@ export default function GymManagement() {
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Gym Identity</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Registry Date</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">SaaS Plan</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Last Active</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">Status</th>
                 <th className="px-6 py-4 text-[10px] font-black text-gray-500 uppercase tracking-widest text-right">Actions</th>
               </tr>
@@ -147,6 +197,9 @@ export default function GymManagement() {
                     <span className="bg-[#3390ec]/10 text-[#3390ec] text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider">
                       {gym.saas_plans?.name || 'Starter/None'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-gray-400 text-xs font-medium">
+                    {getDaysAgo(gym.updated_at)}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
@@ -197,7 +250,7 @@ export default function GymManagement() {
                               {gym.status !== 'active' ? (
                                 <button 
                                   onClick={() => {
-                                    handleStatusChange(gym.id, 'active');
+                                    setActivationModal({ isOpen: true, gymId: gym.id, gymName: gym.gym_name });
                                     setOpenMenuId(null);
                                   }}
                                   className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-emerald-400 hover:bg-emerald-400/10 transition-all"
@@ -248,6 +301,45 @@ export default function GymManagement() {
           )}
         </div>
       </div>
+
+      {/* Activation Modal */}
+      {activationModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl p-6 w-full max-w-md shadow-2xl relative zoom-in-95 animate-in duration-200">
+            <button 
+              onClick={() => setActivationModal({ isOpen: false, gymId: null, gymName: '' })}
+              className="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h3 className="text-xl font-bold text-white mb-2">Activate Gym Account</h3>
+            <p className="text-gray-400 text-sm mb-6">Select a SaaS plan to assign to <span className="text-white font-bold">{activationModal.gymName}</span>.</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">SaaS Plan</label>
+                <select
+                  value={selectedPlan}
+                  onChange={(e) => setSelectedPlan(e.target.value)}
+                  className="w-full bg-[#212121] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all"
+                >
+                  <option value="">No Plan / Starter</option>
+                  {saasPlans.map(plan => (
+                    <option key={plan.id} value={plan.id}>{plan.name} - ₹{plan.price}/mo</option>
+                  ))}
+                </select>
+              </div>
+              <button 
+                onClick={handleActivateSubmit}
+                disabled={updatingId === activationModal.gymId}
+                className="w-full bg-[#3390ec] hover:bg-[#3390ec]/90 text-white font-bold py-3 rounded-xl transition-all disabled:opacity-50"
+              >
+                {updatingId === activationModal.gymId ? 'Activating...' : 'Confirm Activation'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

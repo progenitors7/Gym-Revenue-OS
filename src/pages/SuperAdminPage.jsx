@@ -136,12 +136,12 @@ export default function SuperAdminPage() {
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex flex-wrap bg-white/[0.02] p-1.5 rounded-2xl border border-white/5 glass-card w-full xl:w-auto justify-start xl:justify-end">
+        <div className="flex overflow-x-auto hide-scrollbar bg-white/[0.02] p-1.5 rounded-2xl border border-white/5 glass-card w-full xl:w-auto justify-start xl:justify-end gap-1.5 scroll-smooth">
           {TABS.map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-[11px] font-bold uppercase tracking-wider transition-all duration-300 whitespace-nowrap shrink-0 ${
                 activeTab === tab.id 
                   ? 'bg-[#3390ec] text-white shadow-lg shadow-[#3390ec]/10' 
                   : 'text-slate-500 hover:text-white hover:bg-white/5'

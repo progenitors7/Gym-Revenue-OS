@@ -80,9 +80,14 @@ function SidebarContent({ onClose, isMobile }) {
   const [signingOut, setSigningOut] = useState(false)
 
   const hasAdminAccess = isSuperAdmin(user?.email)
+  const isPaywalled = gym?.status === 'pending' || gym?.billing_status === 'expired'
 
   const filteredNavItems = NAV_ITEMS.filter(item => {
     if (item.path === '/super-admin') return hasAdminAccess
+    // When paywalled, only show Billing and Settings nav items
+    if (isPaywalled) {
+      return item.path === '/billing' || item.path === '/settings'
+    }
     return true
   })
 
@@ -194,13 +199,19 @@ function SidebarContent({ onClose, isMobile }) {
 function BottomNav() {
   const location = useLocation()
   const { user } = useAuth()
+  const { gym } = useGym()
   const { unreadCount } = useNotifications()
 
   const hasAdminAccess = isSuperAdmin(user?.email)
+  const isPaywalled = gym?.status === 'pending' || gym?.billing_status === 'expired'
 
   const visibleItems = NAV_ITEMS.filter(item => {
     if (item.path === '/settings') return false
     if (item.path === '/super-admin') return hasAdminAccess
+    // When paywalled, only show Billing in bottom nav
+    if (isPaywalled) {
+      return item.path === '/billing'
+    }
     return true
   }).slice(0, 5) // Keep bottom nav to max 5 items for mobile
 
