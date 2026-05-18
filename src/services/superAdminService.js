@@ -243,6 +243,32 @@ export const superAdminService = {
       .single();
     
     if (error) throw error;
+
+    // Send a real-time system notification to the gym owner when their ticket gets updated or replied to
+    if (updates.admin_response?.trim() || updates.status) {
+      try {
+        let msg = '';
+        if (updates.admin_response?.trim()) {
+          msg = `Support has replied to your ticket "${data.subject}": "${updates.admin_response}"`;
+        } else {
+          msg = `Your support ticket "${data.subject}" status is now updated to "${updates.status.replace(/_/g, ' ')}"`;
+        }
+        
+        await supabase
+          .from('notifications')
+          .insert({
+            gym_id: data.gym_id,
+            type: 'system_message',
+            title: `Support Ticket Update`,
+            message: msg,
+            is_read: false,
+            reference_id: data.id
+          });
+      } catch (notiError) {
+        console.error('Failed to insert system notification for support ticket:', notiError);
+      }
+    }
+
     return data;
   },
 

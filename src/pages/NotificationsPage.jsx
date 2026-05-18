@@ -24,8 +24,14 @@ export default function NotificationsPage() {
   const filteredNotifications = notifications.filter(n => {
     if (filter === 'unread') return !n.is_read;
     if (filter === 'payments') return n.type?.includes('payment');
-    if (filter === 'memberships') return n.type?.includes('membership');
-    if (filter === 'announcements') return n.type === 'system_broadcast';
+    if (filter === 'memberships') return n.type?.includes('membership') || n.type?.includes('trial');
+    if (filter === 'support') {
+      return n.type === 'system_message' && (n.title?.toLowerCase().includes('support') || n.message?.toLowerCase().includes('support'));
+    }
+    if (filter === 'announcements') {
+      const isSupport = n.title?.toLowerCase().includes('support') || n.message?.toLowerCase().includes('support');
+      return n.type === 'system_broadcast' || (n.type === 'system_message' && !isSupport);
+    }
     return true;
   });
 
@@ -80,6 +86,13 @@ export default function NotificationsPage() {
           bg: 'bg-indigo-500/10', 
           label: 'Announcement'
         };
+      case 'system_message':
+        return { 
+          icon: <Sparkles className="w-5 h-5" />, 
+          color: 'text-purple-500', 
+          bg: 'bg-purple-500/10', 
+          label: 'System Update'
+        };
       default:
         return { 
           icon: <Bell className="w-5 h-5" />, 
@@ -92,6 +105,9 @@ export default function NotificationsPage() {
 
   const getActionLink = (n) => {
     if (n.type === 'system_broadcast') return '/dashboard';
+    if (n.type === 'system_message' || n.title?.toLowerCase().includes('support') || n.message?.toLowerCase().includes('support')) {
+      return n.reference_id ? `/settings?ticketId=${n.reference_id}#support` : '/settings#support';
+    }
     if (n.type?.includes('payment')) return '/payments';
     return '/subscriptions';
   };
@@ -130,7 +146,7 @@ export default function NotificationsPage() {
 
       {/* Control Bar */}
       <div className="flex flex-wrap items-center gap-2 p-1.5 bg-[#212121] border border-white/5 rounded-xl">
-        {['all', 'unread', 'payments', 'memberships', 'announcements'].map(f => (
+        {['all', 'unread', 'payments', 'memberships', 'support', 'announcements'].map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}

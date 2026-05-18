@@ -21,7 +21,7 @@ export function NotificationProvider({ children }) {
       await notificationService.syncNotifications(gym.id);
       
       // Then fetch
-      const { data, error } = await notificationService.getNotifications();
+      const { data, error } = await notificationService.getNotifications(gym.id);
       if (!error && data) {
         setNotifications(data);
         setUnreadCount(data.filter(n => !n.is_read).length);
