@@ -19,10 +19,9 @@ const BILLING_FUNCTION = 'razorpay-subscription-v2';
 const FREE_PROMO_DURATION_MONTHS = 3;
 
 const DURATIONS = [
-  { months: 1, label: '1 Month', price: 499, discount: 0 },
-  { months: 3, label: '3 Months', price: 1349, discount: 10, popular: true },
-  { months: 6, label: '6 Months', price: 2399, discount: 20 },
-  { months: 12, label: '12 Months', price: 4199, discount: 30 },
+  { months: 1, label: '1 Month', price: 299, dailyText: 'Less than ₹10/day', discount: 0 },
+  { months: 3, label: '3 Months', price: 699, dailyText: 'Only ₹7/day', discount: 10, badge: 'MOST POPULAR', badgeColor: 'bg-amber-400 text-black' },
+  { months: 12, label: '12 Months', price: 2499, dailyText: 'Best long-term value', discount: 30, badge: 'BEST VALUE', badgeColor: 'bg-[#3390ec] text-white' },
 ];
 
 export default function BillingPage() {
@@ -239,10 +238,10 @@ export default function BillingPage() {
         ) : (
           <>
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#3390ec]/10 text-[#3390ec] rounded-full text-[10px] font-black uppercase tracking-widest">
-              Premium Access
+              Used by growing gyms across India
             </div>
             <h1 className="text-5xl font-black text-white tracking-tighter uppercase italic">
-              Gym OS <span className="text-[#3390ec]">Pro Plan</span>
+              Gym OS <span className="text-[#3390ec]">Growth Plan</span>
             </h1>
             <p className="text-gray-500 max-w-xl mx-auto text-sm font-medium leading-relaxed">
               Unlock unlimited potential. One plan, everything included. 
@@ -269,6 +268,17 @@ export default function BillingPage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left: Duration Selection & Pricing */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Founding Gym Offer Banner */}
+          <div className="bg-gradient-to-r from-[#3390ec]/10 to-transparent border border-[#3390ec]/20 rounded-2xl p-4 flex items-center gap-4 animate-in slide-in-from-left duration-700">
+            <div className="w-10 h-10 rounded-xl bg-[#3390ec]/20 flex items-center justify-center text-[#3390ec] flex-shrink-0 shadow-lg shadow-[#3390ec]/20">
+              <Star className="w-5 h-5 fill-current" />
+            </div>
+            <div>
+              <h4 className="text-[#3390ec] font-black uppercase tracking-widest text-xs">Founding Gym Offer</h4>
+              <p className="text-gray-400 text-sm font-medium">Early access pricing for limited gyms</p>
+            </div>
+          </div>
+
           <div className="bg-[#212121] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden">
             <div className="absolute top-0 right-0 p-8 opacity-5">
               <Zap className="w-32 h-32 text-[#3390ec]" />
@@ -279,59 +289,55 @@ export default function BillingPage() {
               Select Duration
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {DURATIONS.map((dur) => (
                 <button
                   key={dur.months}
                   onClick={() => !isDurationDisabled && setSelectedDuration(dur)}
                   disabled={isDurationDisabled}
-                  className={`relative p-6 rounded-3xl border-2 transition-all text-left group ${
+                  className={`relative p-6 rounded-3xl border-2 transition-all duration-300 text-left group hover:scale-[1.02] active:scale-[0.98] ${
                     selectedDuration.months === dur.months
-                      ? 'bg-[#3390ec]/5 border-[#3390ec] shadow-xl shadow-[#3390ec]/10'
-                      : 'bg-[#1c1c1c] border-white/5 hover:border-white/10'
+                      ? 'bg-[#3390ec]/5 border-[#3390ec] shadow-xl shadow-[#3390ec]/20'
+                      : 'bg-[#1c1c1c] border-white/5 hover:border-white/10 hover:bg-white/[0.02]'
                   } ${isDurationDisabled && selectedDuration.months !== dur.months ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {dur.popular && (
-                    <div className="absolute -top-3 right-4 px-3 py-1 bg-amber-400 text-black text-[8px] font-black uppercase tracking-widest rounded-full shadow-lg">
-                      Most Popular
+                  {dur.badge && (
+                    <div className={`absolute -top-3 right-4 px-3 py-1 text-[8px] font-black uppercase tracking-widest rounded-full shadow-lg ${dur.badgeColor}`}>
+                      {dur.badge}
                     </div>
                   )}
-                  <div className="flex justify-between items-center mb-2">
-                    <span className={`text-sm font-black uppercase tracking-widest ${
-                      selectedDuration.months === dur.months ? 'text-[#3390ec]' : 'text-gray-500'
+                  <div className="flex flex-col mb-4">
+                    <span className={`text-sm font-black uppercase tracking-widest mb-1 ${
+                      selectedDuration.months === dur.months ? 'text-[#3390ec]' : 'text-gray-500 group-hover:text-gray-400'
                     }`}>
                       {dur.label}
                     </span>
-                    {dur.discount > 0 && (
-                      <span className="text-emerald-400 text-[10px] font-black uppercase tracking-widest">
-                        {dur.discount}% OFF
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-black text-white">₹{dur.price}</span>
-                    <span className="text-gray-600 text-[10px] font-bold">/ total</span>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl font-black text-white transition-colors">₹{dur.price}</span>
+                    </div>
+                    <span className={`text-xs mt-2 font-medium ${
+                      selectedDuration.months === dur.months ? 'text-[#3390ec]' : 'text-gray-500'
+                    }`}>
+                      {dur.dailyText}
+                    </span>
                   </div>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Features list */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Trust Building Features */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
              {[
-               "Unlimited Member Management",
-               "Real-time Attendance Tracking",
-               "Automated Payment Reminders",
-               "SaaS Subscription Tools",
-               "Super Admin Controls",
-               "Premium 24/7 Support"
-             ].map((feature, i) => (
-               <div key={i} className="flex items-center gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
-                 <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-500 flex-shrink-0">
-                   <CheckCircle2 className="w-4 h-4" />
+               { icon: Star, text: "Made for Indian Gym Owners", color: "text-amber-400", bg: "bg-amber-400/10" },
+               { icon: Zap, text: "Simple. Fast. Reliable.", color: "text-[#3390ec]", bg: "bg-[#3390ec]/10" },
+               { icon: CheckCircle2, text: "Manage members, fees and attendance easily.", color: "text-emerald-400", bg: "bg-emerald-400/10" }
+             ].map((item, i) => (
+               <div key={i} className="flex flex-col items-start gap-3 p-5 bg-[#212121] backdrop-blur-md rounded-2xl border border-white/5 hover:border-white/10 transition-colors">
+                 <div className={`w-8 h-8 rounded-xl ${item.bg} flex items-center justify-center ${item.color} flex-shrink-0`}>
+                   <item.icon className="w-4 h-4" />
                  </div>
-                 <span className="text-gray-300 text-xs font-bold">{feature}</span>
+                 <span className="text-gray-300 text-sm font-medium leading-relaxed">{item.text}</span>
                </div>
              ))}
           </div>
@@ -339,12 +345,12 @@ export default function BillingPage() {
 
         {/* Right: Summary & Checkout */}
         <div className="space-y-6">
-          <div className="bg-[#212121] border border-white/5 rounded-[2.5rem] p-8 shadow-2xl sticky top-8">
+          <div className="bg-[#212121]/80 backdrop-blur-xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl sticky top-8">
             <h3 className="text-white font-black uppercase italic tracking-tight mb-8 text-xl">Order Summary</h3>
             
             <div className="space-y-4 mb-8">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-500 font-medium">Pro Plan ({selectedDuration.label})</span>
+                <span className="text-gray-400 font-medium">Growth Plan ({selectedDuration.label})</span>
                 <span className="text-white font-bold">₹{selectedDuration.price}</span>
               </div>
               
@@ -408,19 +414,19 @@ export default function BillingPage() {
             <button
               disabled={processing}
               onClick={handleSubscribe}
-              className="w-full py-5 bg-[#3390ec] hover:bg-[#2b83d6] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-xl shadow-[#3390ec]/20 active:scale-95 disabled:opacity-50"
+              className="w-full py-5 bg-gradient-to-r from-[#3390ec] to-[#2b83d6] hover:from-[#4aa1fa] hover:to-[#3390ec] text-white rounded-2xl text-sm font-black uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-xl shadow-[#3390ec]/30 hover:shadow-[#3390ec]/50 active:scale-[0.98] disabled:opacity-50 group"
             >
               {processing ? (
                 <RefreshCw className="w-5 h-5 animate-spin" />
               ) : finalAmount === 0 ? (
                 <>
-                  <Gift className="w-5 h-5" />
+                  <Gift className="w-5 h-5 group-hover:scale-110 transition-transform" />
                   Redeem Now
                 </>
               ) : (
                 <>
-                  <CreditCard className="w-5 h-5" />
-                  Pay & Subscribe
+                  <Zap className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                  Start Growing
                 </>
               )}
             </button>
