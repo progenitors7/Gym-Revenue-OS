@@ -87,7 +87,7 @@ export default function PromoCodeManager() {
     if (!confirm('Are you sure you want to delete this code?')) return;
     try {
       // First unlink from subscriptions to prevent foreign key errors
-      await supabase.from('saas_subscriptions').update({ promo_code_id: null }).eq('promo_code_id', id);
+      await supabase.from('saas_subscriptions').update({ promo_id: null }).eq('promo_id', id);
 
       const { error } = await supabase
         .from('promo_codes')
