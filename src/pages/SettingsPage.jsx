@@ -25,7 +25,7 @@ import { useCurrentGym } from '../hooks/useCurrentGym';
 import { supabase } from '../lib/supabaseClient';
 import { planService } from '../services/planService';
 // ... imports
-import { Plus, X as CloseIcon } from 'lucide-react';
+import { Plus, X as CloseIcon, Edit2 } from 'lucide-react';
 
 const WA_PRESETS = [
   { label: 'Professional Reminder', text: 'Hello {{name}}, this is a friendly reminder that your {{plan}} plan expires on {{date}}. Please renew to avoid interruption.' },
@@ -125,8 +125,21 @@ export default function SettingsPage() {
   // Membership Plans state
   const [plans, setPlans] = useState([]);
   const [loadingPlans, setLoadingPlans] = useState(false);
-  const [showAddPlan, setShowAddPlan] = useState(false);
-  const [newPlan, setNewPlan] = useState({ name: '', duration_days: 30, price: 0 });
+  const [showPlanModal, setShowPlanModal] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
+  const [planForm, setPlanForm] = useState({ name: '', duration_days: 30, price: 0 });
+
+  const openAddPlanModal = () => {
+    setEditingPlan(null);
+    setPlanForm({ name: '', duration_days: 30, price: 0 });
+    setShowPlanModal(true);
+  };
+
+  const openEditPlanModal = (plan) => {
+    setEditingPlan(plan);
+    setPlanForm({ name: plan.name, duration_days: plan.duration_days, price: plan.price });
+    setShowPlanModal(true);
+  };
 
   // Toast state
   const [toast, setToast] = useState({ message: '', type: 'success' });
@@ -192,14 +205,30 @@ export default function SettingsPage() {
     }
   };
 
-  const handleAddPlan = async () => {
-    if (!newPlan.name || !newPlan.duration_days || newPlan.price === '' || isNaN(newPlan.price)) return showToast('Please fill all fields', 'error');
+  const handleSavePlan = async () => {
+    if (!planForm.name || !planForm.duration_days || planForm.price === '' || isNaN(planForm.price)) {
+      return showToast('Please fill all fields', 'error');
+    }
     setLoadingPlans(true);
     try {
-      await planService.createPlan(gym.id, newPlan);
-      showToast('Plan added successfully!');
-      setNewPlan({ name: '', duration_days: 30, price: 0 });
-      setShowAddPlan(false);
+      if (editingPlan) {
+        const updateData = {
+          name: planForm.name,
+          duration_days: parseInt(planForm.duration_days),
+          price: parseFloat(planForm.price)
+        };
+        await planService.updatePlan(editingPlan.id, updateData);
+        showToast('Plan updated successfully!');
+      } else {
+        const createData = {
+          name: planForm.name,
+          duration_days: parseInt(planForm.duration_days),
+          price: parseFloat(planForm.price)
+        };
+        await planService.createPlan(gym.id, createData);
+        showToast('Plan added successfully!');
+      }
+      setShowPlanModal(false);
       fetchPlans();
     } catch (err) {
       showToast(err.message, 'error');
@@ -405,74 +434,53 @@ export default function SettingsPage() {
           description="Define your own subscription tiers and pricing"
         >
           <div className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {plans.map(plan => (
-                <div key={plan.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between group">
-                  <div>
-                    <p className="text-sm font-bold text-white">{plan.name}</p>
-                    <p className="text-[10px] font-medium text-gray-500 uppercase tracking-widest">
-                      {plan.duration_days} Days • ₹{plan.price}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={() => handleDeletePlan(plan.id)}
-                    className="p-2 rounded-lg hover:bg-red-500/10 text-gray-600 hover:text-red-500 transition-all opacity-0 group-hover:opacity-100"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </div>
-              ))}
-              
-              {!showAddPlan ? (
-                <button 
-                  onClick={() => setShowAddPlan(true)}
-                  className="p-5 rounded-xl border-2 border-dashed border-white/10 hover:border-[#3390ec]/50 hover:bg-[#3390ec]/5 text-gray-500 hover:text-[#3390ec] transition-all flex flex-col items-center justify-center gap-2 h-full min-h-[100px]"
-                >
-                  <Plus className="w-5 h-5" />
-                  <span className="text-[11px] font-bold uppercase tracking-widest">Add New Plan</span>
-                </button>
-              ) : (
-                <div className="p-5 rounded-xl bg-[#2a2a2a] border border-[#3390ec]/50 space-y-4 shadow-lg shadow-[#3390ec]/10 flex flex-col justify-between">
-                  <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-start">
+              {plans.map(plan => {
+                const isTrial = plan.id === 'trial_default';
+                return (
+                  <div key={plan.id} className="p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/5 hover:border-white/10 flex items-center justify-between group transition-all duration-300 min-h-[66px]">
                     <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Plan Name</label>
-                      <input 
-                        type="text" 
-                        placeholder="e.g. Monthly Gold" 
-                        className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
-                        value={newPlan.name}
-                        onChange={e => setNewPlan({...newPlan, name: e.target.value})}
-                      />
+                      <p className="text-sm font-bold text-white tracking-wide">{plan.name}</p>
+                      <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-widest flex items-center gap-1.5">
+                        <span className="px-1.5 py-0.5 rounded bg-white/5 text-gray-400 font-bold">{plan.duration_days} Days</span>
+                        <span className="text-gray-600">•</span>
+                        <span className="text-[#3390ec] font-bold">₹{plan.price}</span>
+                      </p>
                     </div>
-                    <div className="flex gap-3">
-                      <div className="space-y-1 w-1/2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Duration (Days)</label>
-                        <input 
-                          type="number" 
-                          placeholder="30" 
-                          className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
-                          value={newPlan.duration_days}
-                          onChange={e => setNewPlan({...newPlan, duration_days: parseInt(e.target.value)})}
-                        />
+                    {!isTrial && (
+                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                        <button 
+                          onClick={() => openEditPlanModal(plan)}
+                          title="Edit Plan"
+                          className="p-2 rounded-lg hover:bg-[#3390ec]/10 text-gray-500 hover:text-[#3390ec] transition-all"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDeletePlan(plan.id)}
+                          title="Delete Plan"
+                          className="p-2 rounded-lg hover:bg-red-500/10 text-gray-500 hover:text-red-500 transition-all"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
                       </div>
-                      <div className="space-y-1 w-1/2">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1">Price</label>
-                        <input 
-                          type="number" 
-                          placeholder="Price" 
-                          className="w-full bg-[#1c1c1c] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-[#3390ec]"
-                          value={newPlan.price}
-                          onChange={e => setNewPlan({...newPlan, price: parseFloat(e.target.value)})}
-                        />
-                      </div>
-                    </div>
+                    )}
+                    {isTrial && (
+                      <span className="text-[8px] font-black uppercase tracking-wider text-gray-600 bg-white/5 px-2 py-1 rounded-md">
+                        System
+                      </span>
+                    )}
                   </div>
-                  <div className="flex gap-2 pt-2">
-                    <button onClick={handleAddPlan} className="flex-1 py-2.5 bg-[#3390ec] hover:bg-[#2b7ad2] text-white text-xs font-bold rounded-lg transition-colors">Save Plan</button>
-                    <button onClick={() => setShowAddPlan(false)} className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-gray-300 text-xs font-bold rounded-lg transition-colors">Cancel</button>
-                  </div>
-                </div>
-              )}
+                );
+              })}
+              
+              <button 
+                onClick={openAddPlanModal}
+                className="p-4 rounded-xl border-2 border-dashed border-white/5 hover:border-[#3390ec]/30 hover:bg-[#3390ec]/5 text-gray-500 hover:text-[#3390ec] transition-all duration-300 flex items-center justify-center gap-2 min-h-[66px] w-full"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Add New Plan</span>
+              </button>
             </div>
           </div>
         </Section>
@@ -707,6 +715,82 @@ export default function SettingsPage() {
                     className="px-4 py-3 bg-red-500 hover:bg-red-600 disabled:opacity-30 disabled:hover:bg-red-500 text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-red-500/20"
                   >
                     {deleting ? 'Erasing...' : 'Wipe Data'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Plan Editor Modal */}
+        {showPlanModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#1c1c1c] border border-white/10 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in zoom-in-95 relative overflow-hidden">
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-[#3390ec]/0 via-[#3390ec] to-[#3390ec]/0" />
+              
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-[#3390ec]" />
+                  <h3 className="text-lg font-bold text-white">
+                    {editingPlan ? 'Edit Membership Plan' : 'Create Membership Plan'}
+                  </h3>
+                </div>
+                <button 
+                  onClick={() => setShowPlanModal(false)}
+                  className="p-1.5 rounded-lg hover:bg-white/5 text-gray-500 hover:text-white transition-colors"
+                >
+                  <CloseIcon className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Plan Name</label>
+                  <input 
+                    type="text" 
+                    placeholder="e.g. Monthly Gold" 
+                    className="w-full bg-[#121212] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all placeholder-gray-600"
+                    value={planForm.name}
+                    onChange={e => setPlanForm({...planForm, name: e.target.value})}
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Duration (Days)</label>
+                    <input 
+                      type="number" 
+                      placeholder="30" 
+                      className="w-full bg-[#121212] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all placeholder-gray-600"
+                      value={planForm.duration_days}
+                      onChange={e => setPlanForm({...planForm, duration_days: parseInt(e.target.value) || ''})}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-gray-400 uppercase tracking-wider px-1">Price (₹)</label>
+                    <input 
+                      type="number" 
+                      placeholder="Price" 
+                      className="w-full bg-[#121212] border border-white/5 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-[#3390ec]/50 transition-all placeholder-gray-600"
+                      value={planForm.price}
+                      onChange={e => setPlanForm({...planForm, price: e.target.value === '' ? '' : parseFloat(e.target.value)})}
+                    />
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3 pt-4">
+                  <button 
+                    onClick={() => setShowPlanModal(false)}
+                    className="px-4 py-3 bg-white/5 hover:bg-white/10 text-white font-bold rounded-xl text-sm transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleSavePlan} 
+                    disabled={loadingPlans} 
+                    className="px-4 py-3 bg-gradient-to-r from-[#3390ec] to-[#2b7ad2] hover:from-[#4aa1fa] hover:to-[#3390ec] text-white font-bold rounded-xl text-sm transition-all shadow-lg shadow-[#3390ec]/20"
+                  >
+                    {loadingPlans ? 'Saving...' : 'Save Plan'}
                   </button>
                 </div>
               </div>
